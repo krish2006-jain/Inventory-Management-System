@@ -1,0 +1,406 @@
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: 'Abhaya Libre ExtraBold', sans-serif;
+  background-color: #f4f6fb;
+}
+
+
+#root,
+.page-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+
+.container {
+  display: flex;
+  flex: 1;
+  width: 100%;
+}
+
+
+.left-bar {
+  flex: 0 0 45%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 48px;
+  background-color: #ffffff;
+  overflow-y: auto;
+}
+
+/* Logo Section */
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 28px;
+  align-self: flex-start;
+}
+
+.logo img {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  border: 2px solid #6c4ef2;
+  border-radius: 10px;
+}
+
+.logo-container{
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.title{
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 3px;
+}
+
+.subtitle{
+  font-size: 14px;
+  color: #6c757d;
+  letter-spacing: 1px;
+}
+/* Heading */
+.left-bar h2 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #6c4ef2;
+  text-align: center;
+  margin-bottom: 4px;
+}
+
+.subtext {
+  font-size: 14px;
+  color: #888;
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* Role Buttons */
+.roles {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 28px;
+  width: 100%;
+  justify-content: center;
+}
+
+.roles button {
+  padding: 8px 14px;
+  margin-right: 10px;
+  border: 1px solid #ccc;
+background-color: #f8f6ff;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.roles button.active-role {
+  background: #af9ef3;
+  color: white;
+  border: none;
+}
+
+
+.login-form {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.login-form label {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+  margin-bottom: 0px;
+  margin-top: 0px;
+}
+.login-form input {
+  margin-bottom: 2px;
+}
+.login-form input[type="email"],
+.login-form input[type="password"],
+.login-form input[type="phone"],
+.login-form input[type="name"] {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border: 1.5px solid #e8e3fb;
+  border-radius: 10px;
+  background-color: #f8f6ff;
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.login-form input[type="email"]:focus,
+.login-form input[type="password"]:focus {
+  border-color: #6c4ef2;
+  box-shadow: 0 0 0 3px rgba(108, 78, 242, 0.12);
+  background-color: #fff;
+}
+
+/* Input Icon Wrappers */
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-wrapper .input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a89fd8;
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.input-wrapper .eye-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #a89fd8;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.forget {
+  font-size: 12px;
+  color: #6c4ef2;
+  text-align: right;
+  margin-top: 8px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+.forget:hover {
+  text-decoration: underline;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 13px;
+  background-color: #f8f6ff;
+  color: #2b2694;
+  border: 2px solid #e0d8fc;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  letter-spacing: 0.3px;
+}
+
+.login-btn:hover {
+  background-color: #af9ef3;
+}
+
+.login-btn:active {
+  transform: scale(0.98);
+}
+
+
+.or {
+  text-align: center;
+  font-size: 13px;
+  color: #aaa;
+  margin: 16px 0;
+  position: relative;
+}
+
+.or::before,
+.or::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: 42%;
+  height: 1px;
+  background-color: #e0daf5;
+}
+
+.or::before { left: 0; }
+.or::after  { right: 0; }
+
+
+.google-btn {
+  width: 100%;
+  padding: 11px;
+  border: 1.5px solid #e0daf5;
+  border-radius: 10px;
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #444;
+  font-weight: 500;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.google-btn:hover {
+  border-color: #6c4ef2;
+  background-color: #f8f6ff;
+}
+
+.google-btn img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+
+.signup {
+  text-align: center;
+  font-size: 13px;
+  color: #888;
+  margin-top: 20px;
+}
+
+.signup a {
+  color: #6c4ef2;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+}
+
+.signup a:hover {
+  text-decoration: underline;
+}
+
+
+.image-section {
+  flex: 1;
+  background: linear-gradient(145deg, #f0ecff 0%, #e8e0ff 50%, #ddd5ff 90%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 48px 40px;
+  text-align: center;
+}
+
+.image-section img {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 28px;
+}
+
+.image-section h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #3a2d8f;
+  line-height: 1.4;
+  max-width: 340px;
+}
+
+
+.footer {
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+  padding: 14px 0;
+  background-color: #ffffff;
+  border-top: 1px solid #f0eaf9;
+  line-height: 1.6;
+  width: 100%;
+}
+
+
+@media (max-width: 900px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .left-bar {
+    flex: none;
+    width: 100%;
+    padding: 36px 32px 40px;
+  }
+
+  .logo {
+    align-self: center;
+  }
+
+  .image-section {
+    display: flex;
+    width: 100%;
+    padding: 40px 32px;
+    min-height: 320px;
+  }
+
+  .image-section img {
+    max-width: 360px;
+  }
+
+  .image-section h3 {
+    font-size: 20px;
+  }
+}
+
+
+@media (max-width: 480px) {
+  .left-bar {
+    padding: 28px 20px 32px;
+  }
+
+  .logo img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .logo h1 {
+    font-size: 18px;
+  }
+
+  .left-bar h2 {
+    font-size: 22px;
+  }
+
+  .roles {
+    gap: 8px;
+  }
+
+  .roles button {
+    font-size: 12px;
+    padding: 8px 6px;
+  }
+
+  .login-form {
+    max-width: 100%;
+  }
+
+  .image-section {
+    padding: 32px 20px;
+    min-height: 260px;
+  }
+
+  .image-section img {
+    max-width: 260px;
+    margin-bottom: 16px;
+  }
+
+  .image-section h3 {
+    font-size: 18px;
+  }
+}
