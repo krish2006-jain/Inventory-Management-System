@@ -1,4 +1,3 @@
-import { Console } from "console";
 import mongoose  from "mongoose";
 
 export const connectDB=async()=>{
