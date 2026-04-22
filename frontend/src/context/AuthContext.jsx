@@ -1,10 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
+import api from "../services/api";
 
 const AuthContext = createContext(null);
-
-const API = "http://localhost:5000/api/auth";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -13,8 +11,8 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (token) {
-      axios
-        .get(`${API}/me`, { headers: { Authorization: `Bearer ${token}` } })
+      api
+        .get("/auth/me")
         .then((res) => setUser(res.data))
         .catch(() => {
           localStorage.removeItem("token");
@@ -29,16 +27,7 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   const login = async (email, password, role) => {
-    const res = await axios.post(`${API}/login`, { email, password, role });
-    const data = res.data;
-    localStorage.setItem("token", data.token);
-    setToken(data.token);
-    setUser({ id: data.id, role: data.role, email: data.email, username: data.username });
-    return data;
-  };
-
-  const register = async (fields) => {
-    const res = await axios.post(`${API}/register`, fields);
+    const res = await api.post("/auth/login", { email, password, role });
     const data = res.data;
     localStorage.setItem("token", data.token);
     setToken(data.token);
@@ -48,6 +37,25 @@ export function AuthProvider({ children }) {
       email: data.email,
       username: data.username,
       phone: data.phone,
+      avator: data.avator,
+      status: data.status,
+    });
+    return data;
+  };
+
+  const register = async (fields) => {
+    const res = await api.post("/auth/register", fields);
+    const data = res.data;
+    localStorage.setItem("token", data.token);
+    setToken(data.token);
+    setUser({
+      id: data.id,
+      role: data.role,
+      email: data.email,
+      username: data.username,
+      phone: data.phone,
+      avator: data.avator,
+      status: data.status,
     });
     return data;
   };
@@ -59,7 +67,9 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, loading, login, register, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

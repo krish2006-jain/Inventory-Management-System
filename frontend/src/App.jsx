@@ -49,27 +49,154 @@ function App() {
           <Route path="/register" element={<Register />} />
 
           {/* Owner routes */}
-          <Route path="/dashboard" element={<ProtectedRoute allowedRoles={["owner"]}><Dashboard /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute allowedRoles={["owner"]}><Reports /></ProtectedRoute>} />
-          <Route path="/products" element={<ProtectedRoute allowedRoles={["owner"]}><Products /></ProtectedRoute>} />
-          <Route path="/categories" element={<ProtectedRoute allowedRoles={["owner"]}><Categories /></ProtectedRoute>} />
-          <Route path="/stock-alerts" element={<ProtectedRoute allowedRoles={["owner"]}><StockAlerts /></ProtectedRoute>} />
-          <Route path="/purchases" element={<ProtectedRoute allowedRoles={["owner"]}><Purchases /></ProtectedRoute>} />
-          <Route path="/suppliers" element={<ProtectedRoute allowedRoles={["owner"]}><Suppliers /></ProtectedRoute>} />
-          <Route path="/users" element={<ProtectedRoute allowedRoles={["owner"]}><Users /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute allowedRoles={["owner"]}><Settings /></ProtectedRoute>} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/reports"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Reports />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/products"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Products />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/categories"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Categories />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/stock-alerts"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <StockAlerts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/purchases"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Purchases />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/suppliers"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Suppliers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute allowedRoles={["owner"]}>
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Stock Manager routes */}
-          <Route path="/sm/dashboard" element={<ProtectedRoute allowedRoles={["stockmgr"]}><SmDashboard /></ProtectedRoute>} />
-          <Route path="/sm/stock-list" element={<ProtectedRoute allowedRoles={["stockmgr"]}><StockList /></ProtectedRoute>} />
-          <Route path="/sm/item-details" element={<ProtectedRoute allowedRoles={["stockmgr"]}><ItemDetails /></ProtectedRoute>} />
-          <Route path="/sm/receive-stock" element={<ProtectedRoute allowedRoles={["stockmgr"]}><ReceiveStock /></ProtectedRoute>} />
-          <Route path="/sm/dispatch" element={<ProtectedRoute allowedRoles={["stockmgr"]}><Dispatch /></ProtectedRoute>} />
-          <Route path="/sm/adjust-stock" element={<ProtectedRoute allowedRoles={["stockmgr"]}><AdjustStock /></ProtectedRoute>} />
-          <Route path="/sm/activity-log" element={<ProtectedRoute allowedRoles={["stockmgr"]}><ActivityLog /></ProtectedRoute>} />
+          <Route
+            path="/sm/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={["stockmgr"]}>
+                <SmDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sm/stock-list"
+            element={
+              <ProtectedRoute allowedRoles={["stockmgr"]}>
+                <StockList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sm/item-details"
+            element={
+              <ProtectedRoute allowedRoles={["stockmgr"]}>
+                <ItemDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sm/item-details/:id"
+            element={
+              <ProtectedRoute allowedRoles={["stockmgr"]}>
+                <ItemDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sm/receive-stock"
+            element={
+              <ProtectedRoute allowedRoles={["stockmgr"]}>
+                <ReceiveStock />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sm/dispatch"
+            element={
+              <ProtectedRoute allowedRoles={["stockmgr"]}>
+                <Dispatch />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sm/adjust-stock"
+            element={
+              <ProtectedRoute allowedRoles={["stockmgr"]}>
+                <AdjustStock />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/sm/activity-log"
+            element={
+              <ProtectedRoute allowedRoles={["stockmgr"]}>
+                <ActivityLog />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Cashier route */}
-          <Route path="/cashier" element={<ProtectedRoute allowedRoles={["cashier"]}><CashierPOS /></ProtectedRoute>} />
+          <Route
+            path="/cashier"
+            element={
+              <ProtectedRoute allowedRoles={["cashier"]}>
+                <CashierPOS />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Default: redirect by role */}
           <Route path="/" element={<RedirectByRole />} />

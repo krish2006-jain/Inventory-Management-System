@@ -1,35 +1,75 @@
+import { useEffect, useState } from "react";
 import WorkspaceLayout from "../components/WorkspaceLayout";
+import api from "../services/api";
+
+const moneyFormatter = new Intl.NumberFormat("en-IN", {
+  style: "currency",
+  currency: "INR",
+  maximumFractionDigits: 0,
+});
 
 function Dashboard() {
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadSummary = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.get("/dashboard/summary");
+      setSummary(res.data);
+    } catch {
+      setError("Failed to load dashboard summary");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSummary();
+  }, []);
+
+  const metrics = summary?.metrics || {};
+  const lowStock = summary?.lowStockItems || [];
+  const recent = summary?.recentMovements || [];
+
   const actions = (
     <>
-      <button className="subtle-btn" type="button">Export Report</button>
-      <button className="primary-btn" type="button">+ Add Product</button>
+      <button className="subtle-btn" type="button" onClick={loadSummary}>
+        Refresh
+      </button>
+      <button className="primary-btn" type="button">
+        Live Dashboard
+      </button>
     </>
   );
 
   return (
     <WorkspaceLayout title="Dashboard" actions={actions}>
+      {error ? (
+        <p style={{ color: "#b43f47", fontWeight: 700 }}>{error}</p>
+      ) : null}
       <section className="metrics-grid">
         <article className="metric-card">
-          <p>Total Revenue 💰</p>
-          <h3>₹2,48,500</h3>
-          <span className="metric-up">+12% this month</span>
+          <p>Total Products 📦</p>
+          <h3>{loading ? "..." : metrics.totalProducts || 0}</h3>
+          <span className="metric-up">Tracked in database</span>
         </article>
         <article className="metric-card">
-          <p>Total Products 📦</p>
-          <h3>348</h3>
-          <span className="metric-up">+8 added this week</span>
+          <p>Total Categories 🏷️</p>
+          <h3>{loading ? "..." : metrics.totalCategories || 0}</h3>
+          <span className="metric-up">Catalog segments</span>
         </article>
         <article className="metric-card">
           <p>Low Stock Items ⚠️</p>
-          <h3>12</h3>
-          <span className="metric-down">Needs reorder</span>
+          <h3>{loading ? "..." : metrics.lowStockCount || 0}</h3>
+          <span className="metric-down">Below reorder point</span>
         </article>
         <article className="metric-card">
-          <p>Today's Sales 📈</p>
-          <h3>₹18,240</h3>
-          <span className="metric-down">-3% vs yesterday</span>
+          <p>Out Of Stock ❌</p>
+          <h3>{loading ? "..." : metrics.outOfStockCount || 0}</h3>
+          <span className="metric-down">Immediate attention</span>
         </article>
       </section>
 
@@ -37,18 +77,67 @@ function Dashboard() {
         <article className="panel chart-panel">
           <div className="panel-head">
             <h4>Weekly Sales</h4>
-            <button type="button">View Full Report</button>
+            <button type="button">Inventory Health</button>
           </div>
           <div className="bars-wrap" aria-label="Weekly sales chart">
-            <div className="bar-col"><span style={{ height: "38%" }} /><small>Mon</small></div>
-            <div className="bar-col"><span style={{ height: "58%" }} /><small>Tue</small></div>
-            <div className="bar-col"><span style={{ height: "51%" }} /><small>Wed</small></div>
-            <div className="bar-col"><span style={{ height: "72%" }} /><small>Thu</small></div>
-            <div className="bar-col"><span style={{ height: "56%" }} /><small>Fri</small></div>
-            <div className="bar-col"><span style={{ height: "84%" }} /><small>Sat</small></div>
-            <div className="bar-col"><span style={{ height: "32%" }} /><small>Sun</small></div>
+            <div className="bar-col">
+              <span
+                style={{
+                  height: `${Math.min(100, (metrics.totalProducts || 0) / 2)}%`,
+                }}
+              />
+              <small>SKUs</small>
+            </div>
+            <div className="bar-col">
+              <span
+                style={{
+                  height: `${Math.min(100, (metrics.totalSuppliers || 0) * 8)}%`,
+                }}
+              />
+              <small>Suppliers</small>
+            </div>
+            <div className="bar-col">
+              <span
+                style={{
+                  height: `${Math.min(100, (metrics.totalCategories || 0) * 12)}%`,
+                }}
+              />
+              <small>Category</small>
+            </div>
+            <div className="bar-col">
+              <span
+                style={{
+                  height: `${Math.min(100, (metrics.lowStockCount || 0) * 12)}%`,
+                }}
+              />
+              <small>Low</small>
+            </div>
+            <div className="bar-col">
+              <span
+                style={{
+                  height: `${Math.min(100, (metrics.outOfStockCount || 0) * 15)}%`,
+                }}
+              />
+              <small>Out</small>
+            </div>
+            <div className="bar-col">
+              <span
+                style={{
+                  height: `${Math.min(100, (metrics.receivedToday || 0) * 20)}%`,
+                }}
+              />
+              <small>In</small>
+            </div>
+            <div className="bar-col">
+              <span
+                style={{
+                  height: `${Math.min(100, (metrics.dispatchedToday || 0) * 20)}%`,
+                }}
+              />
+              <small>Out</small>
+            </div>
           </div>
-          <p className="caption">Peak: Saturday &nbsp; Total: ₹1,12,400</p>
+          <p className="caption">Live metrics snapshot from database</p>
         </article>
 
         <article className="panel">
@@ -56,9 +145,20 @@ function Dashboard() {
             <h4>Low Stock Alerts</h4>
           </div>
           <ul className="list-lines">
-            <li><strong>Wireless Scanner</strong><span>5 units left</span></li>
-            <li><strong>Barcode Labels</strong><span>12 units left</span></li>
-            <li><strong>Storage Bin XL</strong><span>8 units left</span></li>
+            {lowStock.length === 0 ? (
+              <li>
+                <strong>No alerts</strong>
+                <span>All items healthy</span>
+              </li>
+            ) : null}
+            {lowStock.map((item) => (
+              <li key={item._id}>
+                <strong>{item.name}</strong>
+                <span>
+                  {item.stock} left (reorder {item.reorderLevel})
+                </span>
+              </li>
+            ))}
           </ul>
         </article>
 
@@ -67,9 +167,24 @@ function Dashboard() {
             <h4>Recents Transaction</h4>
           </div>
           <ul className="list-lines">
-            <li><strong>PO-1942</strong><span>Received 45 items</span></li>
-            <li><strong>SO-8831</strong><span>Dispatched 12 items</span></li>
-            <li><strong>RT-1209</strong><span>2 items returned</span></li>
+            {recent.length === 0 ? (
+              <li>
+                <strong>No activity</strong>
+                <span>Start receiving/dispatching stock</span>
+              </li>
+            ) : null}
+            {recent.slice(0, 3).map((movement) => (
+              <li key={movement._id}>
+                <strong>
+                  {movement.reference ||
+                    movement.product?.name ||
+                    "Stock Event"}
+                </strong>
+                <span>
+                  {movement.type} {movement.quantity} items
+                </span>
+              </li>
+            ))}
           </ul>
         </article>
 
@@ -78,9 +193,18 @@ function Dashboard() {
             <h4>Top Products</h4>
           </div>
           <ul className="list-lines">
-            <li><strong>Smart Shelving Kit</strong><span>1,240 sold</span></li>
-            <li><strong>QR Scanner Pro</strong><span>980 sold</span></li>
-            <li><strong>Label Printer Mini</strong><span>770 sold</span></li>
+            {lowStock.slice(0, 3).map((item) => (
+              <li key={item._id}>
+                <strong>{item.name}</strong>
+                <span>Reorder target {item.reorderLevel}</span>
+              </li>
+            ))}
+            {lowStock.length === 0 ? (
+              <li>
+                <strong>Healthy inventory</strong>
+                <span>No urgent products</span>
+              </li>
+            ) : null}
           </ul>
         </article>
       </section>

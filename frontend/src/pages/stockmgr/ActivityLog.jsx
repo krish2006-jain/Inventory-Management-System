@@ -1,33 +1,89 @@
+import { useEffect, useMemo, useState } from "react";
 import WorkspaceLayout from "../../components/WorkspaceLayout";
-
-const logs = [
-  { time: "14:32", item: "QR Scanner Pro", action: "Received", change: "+50", newQty: "170", reason: "PO-2041", by: "Ravi M." },
-  { time: "13:15", item: "Barcode Labels", action: "Dispatched", change: "-20", newQty: "12", reason: "SO-8831", by: "Ravi M." },
-  { time: "11:45", item: "Storage Bin XL", action: "Adjusted", change: "-5", newQty: "8", reason: "Damaged", by: "Ravi M." },
-  { time: "10:20", item: "RFID Tags", action: "Received", change: "+100", newQty: "340", reason: "PO-2040", by: "Jake W." },
-  { time: "09:50", item: "Smart Shelving", action: "Dispatched", change: "-15", newQty: "0", reason: "SO-8830", by: "Jake W." },
-  { time: "09:10", item: "Cable Ties", action: "Adjusted", change: "-3", newQty: "18", reason: "Count Error", by: "Ravi M." },
-  { time: "08:30", item: "Thermal Paper", action: "Received", change: "+30", newQty: "32", reason: "PO-2039", by: "Jake W." },
-];
+import api from "../../services/api";
 
 function ActivityLog() {
+  const [logs, setLogs] = useState([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadLogs = async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.get("/products/movements", {
+        params: { limit: 150 },
+      });
+      setLogs(res.data || []);
+    } catch {
+      setError("Failed to load activity log");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadLogs();
+  }, []);
+
+  const filteredLogs = useMemo(() => {
+    if (!search.trim()) return logs;
+    const key = search.toLowerCase();
+    return logs.filter((log) =>
+      [
+        log.product?.name,
+        log.type,
+        log.reason,
+        log.reference,
+        log.performedBy?.username,
+      ]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(key)),
+    );
+  }, [logs, search]);
+
   const actions = (
     <>
-      <button className="subtle-btn" type="button">Export Reports</button>
-      <button className="primary-btn" type="button">Add Product</button>
+      <button className="subtle-btn" type="button" onClick={loadLogs}>
+        Refresh
+      </button>
+      <button className="primary-btn" type="button">
+        Live Activity
+      </button>
     </>
   );
 
   return (
     <WorkspaceLayout title="Activity Log" actions={actions}>
       <section className="products-toolbar">
-        <input className="search-input" type="search" placeholder="Search product" aria-label="Search logs" />
-        <button className="chip-btn" type="button">All Categories</button>
-        <button className="chip-btn" type="button">Stock Status</button>
+        <input
+          className="search-input"
+          type="search"
+          placeholder="Search activity"
+          aria-label="Search logs"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <button className="chip-btn" type="button">
+          Total: {logs.length}
+        </button>
+        <button className="chip-btn" type="button">
+          Filtered: {filteredLogs.length}
+        </button>
       </section>
 
+      {error ? (
+        <p style={{ color: "#b43f47", fontWeight: 700 }}>{error}</p>
+      ) : null}
+
       <section className="table-shell">
-        <header className="table-head-row" style={{ gridTemplateColumns: "0.7fr 1.3fr 1fr 0.8fr 0.8fr 1fr 0.8fr" }}>
+        <header
+          className="table-head-row"
+          style={{
+            gridTemplateColumns: "0.7fr 1.3fr 1fr 0.8fr 0.8fr 1fr 0.8fr",
+          }}
+        >
           <span>Time</span>
           <span>Item</span>
           <span>Action</span>
@@ -38,25 +94,81 @@ function ActivityLog() {
         </header>
 
         <div className="table-body">
-          {logs.map((l, i) => (
-            <div key={i} className="table-data-row" style={{ gridTemplateColumns: "0.7fr 1.3fr 1fr 0.8fr 0.8fr 1fr 0.8fr" }}>
-              <span>{l.time}</span>
-              <span className="product-name">{l.item}</span>
-              <span className={`status-badge ${l.action === "Received" ? "badge-green" : l.action === "Dispatched" ? "badge-blue" : "badge-yellow"}`}>
-                {l.action}
-              </span>
-              <span style={{ fontWeight: 700, color: l.change.startsWith("+") ? "#38a169" : "#e53e3e" }}>{l.change}</span>
-              <span>{l.newQty}</span>
-              <span>{l.reason}</span>
-              <span>{l.by}</span>
+          {loading ? (
+            <div
+              className="table-data-row"
+              style={{
+                gridTemplateColumns: "0.7fr 1.3fr 1fr 0.8fr 0.8fr 1fr 0.8fr",
+              }}
+            >
+              <span>Loading log entries...</span>
             </div>
-          ))}
+          ) : filteredLogs.length === 0 ? (
+            <div
+              className="table-data-row"
+              style={{
+                gridTemplateColumns: "0.7fr 1.3fr 1fr 0.8fr 0.8fr 1fr 0.8fr",
+              }}
+            >
+              <span>No activity found</span>
+            </div>
+          ) : (
+            filteredLogs.map((log) => {
+              const actionLabel =
+                log.type === "receive"
+                  ? "Received"
+                  : log.type === "dispatch"
+                    ? "Dispatched"
+                    : "Adjusted";
+
+              return (
+                <div
+                  key={log._id}
+                  className="table-data-row"
+                  style={{
+                    gridTemplateColumns:
+                      "0.7fr 1.3fr 1fr 0.8fr 0.8fr 1fr 0.8fr",
+                  }}
+                >
+                  <span>
+                    {new Date(log.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span className="product-name">
+                    {log.product?.name || "Unknown"}
+                  </span>
+                  <span
+                    className={`status-badge ${actionLabel === "Received" ? "badge-green" : actionLabel === "Dispatched" ? "badge-blue" : "badge-yellow"}`}
+                  >
+                    {actionLabel}
+                  </span>
+                  <span
+                    style={{
+                      fontWeight: 700,
+                      color: log.direction === "in" ? "#38a169" : "#e53e3e",
+                    }}
+                  >
+                    {log.direction === "in" ? "+" : "-"}
+                    {log.quantity}
+                  </span>
+                  <span>{log.newStock}</span>
+                  <span>{log.reason || log.reference || "-"}</span>
+                  <span>{log.performedBy?.username || "System"}</span>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        <footer className="table-footer" style={{ gridTemplateColumns: "1fr 1fr" }}>
-          <span>Showing 1-7 of 240 products</span>
+        <footer
+          className="table-footer"
+          style={{ gridTemplateColumns: "1fr 1fr" }}
+        >
+          <span>Showing {filteredLogs.length} records</span>
           <span className="pagination">
-            <button>1</button><button>2</button><button>3</button><button>4</button><button>5</button>
+            <button type="button">1</button>
           </span>
         </footer>
       </section>
