@@ -26,7 +26,7 @@ const seed = async () => {
         createdBy: user._id,
       },
     },
-    { new: true, upsert: true },
+    { returnDocument: "after", upsert: true },
   );
 
   const supplier = await Supplier.findOneAndUpdate(
@@ -41,7 +41,7 @@ const seed = async () => {
         createdBy: user._id,
       },
     },
-    { new: true, upsert: true },
+    { returnDocument: "after", upsert: true },
   );
 
   const products = [
@@ -85,7 +85,7 @@ const seed = async () => {
           createdBy: user._id,
         },
       },
-      { new: true, upsert: true },
+      { returnDocument: "after", upsert: true },
     );
   }
 
