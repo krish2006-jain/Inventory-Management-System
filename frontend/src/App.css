@@ -2,7 +2,7 @@
    STOCKLY – Workspace Design System (Blue/Indigo Theme)
    ================================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Sora:wght@600;700&display=swap");
+/* Font imports handled in index.css */
 
 :root {
   --ws-bg: linear-gradient(165deg, #f4f7fb 0%, #e9eef7 100%);
@@ -70,7 +70,8 @@ html {
   animation: riseIn 450ms ease-out;
   position: sticky;
   top: 16px;
-  max-height: calc(100vh - 32px);
+  align-self: start;
+  height: calc(100vh - 32px);
   overflow-y: auto;
   z-index: 10;
   flex-shrink: 0;
@@ -2175,6 +2176,8 @@ select.status-badge {
   padding: 28px;
   max-width: 480px;
   width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   animation: modalScale 0.2s ease;
 }

@@ -1,180 +1,141 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import WorkspaceLayout from "../../components/WorkspaceLayout";
+import { useToast } from "../../components/ToastProvider";
 import api from "../../services/api";
 
 function SmDashboard() {
-  const [summary, setSummary] = useState(null);
+  const toast = useToast();
+  const navigate = useNavigate();
+  const [data, setData] = useState(null);
+  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const loadSummary = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
-      const res = await api.get("/dashboard/summary");
-      setSummary(res.data);
+      const [dashRes, alertRes] = await Promise.all([
+        api.get("/dashboard/stats"),
+        api.get("/products/low-stock"),
+      ]);
+      setData(dashRes.data);
+      setAlerts(alertRes.data || []);
     } catch {
-      setError("Failed to load dashboard data");
+      toast.error("Failed to load dashboard data");
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  useEffect(() => {
-    loadSummary();
-  }, []);
+  useEffect(() => { load(); }, [load]);
 
-  const metrics = summary?.metrics || {};
-  const lowStock = summary?.lowStockItems || [];
-  const recent = summary?.recentMovements || [];
+  if (loading) {
+    return (
+      <WorkspaceLayout>
+        <div className="skeleton-grid">
+          {[1,2,3,4].map((i) => <div key={i} className="skeleton-card"></div>)}
+        </div>
+      </WorkspaceLayout>
+    );
+  }
 
-  const actions = (
-    <>
-      <button className="subtle-btn" type="button" onClick={loadSummary}>
-        Refresh
-      </button>
-      <span className="text-chip">Live metrics</span>
-    </>
-  );
+  const criticalAlerts = alerts.filter((p) => p.stock === 0);
+  const warningAlerts = alerts.filter((p) => p.stock > 0);
 
   return (
-    <WorkspaceLayout title="Dashboard" actions={actions}>
-      {error ? (
-        <p style={{ color: "#b43f47", fontWeight: 700 }}>{error}</p>
-      ) : null}
-      {/* Metric Cards */}
-      <section className="metrics-grid">
-        <article className="metric-card">
-          <p>Total SKUs</p>
-          <h3>{loading ? "..." : metrics.totalProducts || 0}</h3>
-          <span className="metric-up">Across 4 aisles</span>
-        </article>
-        <article className="metric-card">
-          <p>Out of Stocks</p>
-          <h3 style={{ color: "#e53e3e" }}>
-            {loading ? "..." : metrics.outOfStockCount || 0}
-          </h3>
-          <span className="metric-down">Needs reorder</span>
-        </article>
-        <article className="metric-card">
-          <p>Low Stock Alerts</p>
-          <h3 style={{ color: "#d69e2e" }}>
-            {loading ? "..." : metrics.lowStockCount || 0}
-          </h3>
-          <span className="metric-down">Below reorder point</span>
-        </article>
-        <article className="metric-card">
-          <p>Received Today</p>
-          <h3 style={{ color: "#38a169" }}>
-            {loading ? "..." : metrics.receivedToday || 0}
-          </h3>
-          <span className="metric-up">Units logged in</span>
-        </article>
-      </section>
+    <WorkspaceLayout>
+      {/* KPI Cards */}
+      <div className="kpi-cards">
+        <div className="kpi-card">
+          <div className="kpi-label">Total SKUs</div>
+          <div className="kpi-value">{data?.totalProducts || 0}</div>
+        </div>
+        <div className="kpi-card kpi-danger">
+          <div className="kpi-label">Out of Stock</div>
+          <div className="kpi-value">{data?.outOfStock || 0}</div>
+        </div>
+        <div className="kpi-card kpi-warning">
+          <div className="kpi-label">Low Stock Alerts</div>
+          <div className="kpi-value">{data?.lowStock || 0}</div>
+        </div>
+        <div className="kpi-card kpi-accent">
+          <div className="kpi-label">Categories</div>
+          <div className="kpi-value">{data?.categories || 0}</div>
+        </div>
+      </div>
 
-      {/* Panels Grid */}
-      <section className="analytics-grid">
-        <article className="panel">
-          <div className="panel-head">
-            <h4>Urgent Alerts</h4>
-          </div>
-          <ul className="list-lines">
-            {lowStock.length === 0 ? (
-              <li>
-                <strong>No urgent alerts</strong>
-                <span>All inventory healthy</span>
-              </li>
-            ) : null}
-            {lowStock.slice(0, 3).map((product) => (
-              <li key={product._id}>
-                <strong>{product.name}</strong>
-                <span
-                  className={
-                    (product.stock || 0) === 0 ? "badge-red" : "badge-yellow"
-                  }
-                >
-                  {product.stock} units — reorder at {product.reorderLevel}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="panel">
-          <div className="panel-head">
-            <h4>Quick Actions</h4>
-          </div>
-          <div className="quick-actions-grid">
-            <a href="/sm/receive-stock" className="quick-action-btn">
+      {/* Quick Actions */}
+      <div className="dashboard-grid" style={{ marginTop: 16 }}>
+        <div className="panel-surface">
+          <h4 className="panel-title">Quick Actions</h4>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
+            <button className="primary-btn" style={{ minHeight: 44 }} onClick={() => navigate("/sm/receive-stock")}>
               Receive Stock
-            </a>
-            <a href="/sm/dispatch" className="quick-action-btn">
-              Dispatch
-            </a>
-            <a href="/sm/adjust-stock" className="quick-action-btn">
+            </button>
+            <button className="subtle-btn" style={{ minHeight: 44 }} onClick={() => navigate("/sm/adjust-stock")}>
               Adjust Stock
-            </a>
-            <a href="/sm/activity-log" className="quick-action-btn">
-              View Logs
-            </a>
+            </button>
+            <button className="subtle-btn" style={{ minHeight: 44 }} onClick={() => navigate("/sm/stock-list")}>
+              View Inventory
+            </button>
+            <button className="subtle-btn" style={{ minHeight: 44 }} onClick={() => navigate("/sm/activity-log")}>
+              Activity Log
+            </button>
           </div>
-        </article>
+        </div>
 
-        <article className="panel">
-          <div className="panel-head">
-            <h4>Recent Movements</h4>
-          </div>
-          <ul className="list-lines">
-            {recent.length === 0 ? (
-              <li>
-                <strong>No movements</strong>
-                <span>No recent operations</span>
-              </li>
-            ) : null}
-            {recent.slice(0, 3).map((movement) => (
-              <li key={movement._id}>
-                <strong>{movement.product?.name || "Unknown Product"}</strong>
-                <span
-                  className={
-                    movement.type === "receive"
-                      ? "badge-green"
-                      : movement.type === "dispatch"
-                        ? "badge-blue"
-                        : "badge-yellow"
-                  }
-                >
-                  {movement.direction === "in" ? "+" : "-"}
-                  {movement.quantity} {movement.type}
+        {/* Urgent Alerts */}
+        <div className="panel-surface">
+          <h4 className="panel-title">Urgent Alerts ({alerts.length})</h4>
+          {alerts.length === 0 ? (
+            <div className="empty-state-mini">All stock levels healthy</div>
+          ) : (
+            <div className="top-products-list" style={{ maxHeight: 300, overflowY: "auto" }}>
+              {/* Critical first */}
+              {criticalAlerts.slice(0, 5).map((p) => (
+                <div key={p._id} className="top-product-row" style={{ borderLeft: "3px solid #dc2626", paddingLeft: 8 }}>
+                  <div className="top-info">
+                    <span className="top-name">{p.name}</span>
+                    <span className="top-meta">Stock: {p.stock} / Reorder: {p.reorderLevel}</span>
+                  </div>
+                  <span className="status-pill status-Cancelled">CRITICAL</span>
+                </div>
+              ))}
+              {warningAlerts.slice(0, 5).map((p) => (
+                <div key={p._id} className="top-product-row" style={{ borderLeft: "3px solid #f59e0b", paddingLeft: 8 }}>
+                  <div className="top-info">
+                    <span className="top-name">{p.name}</span>
+                    <span className="top-meta">Stock: {p.stock} / Reorder: {p.reorderLevel}</span>
+                  </div>
+                  <span className="status-pill status-Pending">LOW</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Stock Movements */}
+      <div className="panel-surface" style={{ marginTop: 16 }}>
+        <h4 className="panel-title">Recent Activity</h4>
+        {(data?.recentActivity || []).length === 0 ? (
+          <div className="empty-state-mini">No recent activity</div>
+        ) : (
+          <div className="top-products-list">
+            {data.recentActivity.slice(0, 8).map((act, i) => (
+              <div key={i} className="top-product-row">
+                <div className="top-info">
+                  <span className="top-name">{act.productName || act.product?.name || "Product"}</span>
+                  <span className="top-meta">{act.type} | {act.quantity} units | {act.reason}</span>
+                </div>
+                <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>
+                  {new Date(act.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                 </span>
-              </li>
+              </div>
             ))}
-          </ul>
-        </article>
-
-        <article className="panel">
-          <div className="panel-head">
-            <h4>Today's Snapshot</h4>
           </div>
-          <div className="snapshot-stats">
-            <div className="snapshot-item">
-              <h3>{metrics.receivedToday || 0}</h3>
-              <p>Items Received</p>
-            </div>
-            <div className="snapshot-item">
-              <h3>{metrics.dispatchedToday || 0}</h3>
-              <p>Items Dispatched</p>
-            </div>
-            <div className="snapshot-item">
-              <h3>{metrics.adjustedToday || 0}</h3>
-              <p>Adjustments</p>
-            </div>
-            <div className="snapshot-item">
-              <h3>{metrics.lowStockCount || 0}</h3>
-              <p>Flags Raised</p>
-            </div>
-          </div>
-        </article>
-      </section>
+        )}
+      </div>
     </WorkspaceLayout>
   );
 }

@@ -1,4 +1,5 @@
 import "./App.css";
+import "./styles/pos.css";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ToastProvider } from "./components/ToastProvider";
@@ -6,6 +7,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 
 // Auth pages
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 
@@ -27,7 +29,7 @@ import AdjustStock from "./pages/stockmgr/AdjustStock";
 import ActivityLog from "./pages/stockmgr/ActivityLog";
 
 // Cashier
-import CashierPOS from "./pages/cashier/CashierPOS";
+import CashierPOS from "./pages/CashierPOS";
 import DailySummary from "./pages/cashier/DailySummary";
 
 function RedirectByRole() {
@@ -48,6 +50,7 @@ function App() {
             {/* Public */}
             <Route path="/" element={<Home />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
             {/* Owner routes */}
             <Route

@@ -13,6 +13,7 @@ import dashboardRoutes from "./routes/dashboard.js";
 import salesRoutes from "./routes/sales.js";
 import settingsRoutes from "./routes/settings.js";
 import reportsRoutes from "./routes/reports.js";
+import stockMovementRoutes from "./routes/stockMovements.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -33,6 +34,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/sales", salesRoutes);
 app.use("/api/settings", settingsRoutes);
 app.use("/api/reports", reportsRoutes);
+app.use("/api/stock-movements", stockMovementRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({ ok: true, message: "Stockly API running" });

@@ -1,272 +1,227 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import WorkspaceLayout from "../../components/WorkspaceLayout";
+import { useToast } from "../../components/ToastProvider";
 import api from "../../services/api";
 
 function ReceiveStock() {
-  const [searchParams] = useSearchParams();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [products, setProducts] = useState([]);
-  const [pendingPOs, setPendingPOs] = useState([]);
-  const [productId, setProductId] = useState(searchParams.get("product") || "");
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
   const [quantity, setQuantity] = useState("");
-  const [reference, setReference] = useState("");
-  const [reason, setReason] = useState("Purchase received");
+  const [supplier, setSupplier] = useState("");
   const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [showScanner, setShowScanner] = useState(false);
 
-  const selectedProduct = useMemo(
-    () => products.find((product) => product._id === productId),
-    [products, productId],
-  );
-
-  const loadData = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
-      const [productsResult, poResult] = await Promise.allSettled([
-        api.get("/products"),
-        api.get("/purchases"),
-      ]);
-
-      if (productsResult.status === "fulfilled") {
-        const allProducts = productsResult.value.data || [];
-        setProducts(allProducts);
-
-        if (!productId && allProducts.length > 0) {
-          setProductId(allProducts[0]._id);
-        }
-      } else {
-        setProducts([]);
-        setError("Failed to load products. Please refresh or login again.");
-      }
-
-      if (poResult.status === "fulfilled") {
-        const allPOs = poResult.value.data?.purchases || [];
-        setPendingPOs(
-          allPOs
-            .filter((po) => ["Pending", "In Transit"].includes(po.status))
-            .slice(0, 5),
-        );
-      } else {
-        setPendingPOs([]);
-      }
+      const res = await api.get("/products");
+      setProducts(res.data || []);
     } catch {
-      setError("Failed to load receive stock data");
+      toast.error("Failed to load products");
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
+  useEffect(() => { load(); }, [load]);
+
+  // Pre-fill from navigation state
   useEffect(() => {
-    loadData();
-  }, []);
+    const p = location.state?.product;
+    if (p) {
+      setSelectedProduct(p);
+      setProductSearch(p.name);
+      setSupplier(p.supplier?.name || "");
+    }
+  }, [location.state]);
 
-  const handleReceive = async () => {
-    if (!productId || !quantity) {
-      setError("Please select a product and quantity");
+  const filteredProducts = productSearch.trim()
+    ? products.filter((p) =>
+        p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(productSearch.toLowerCase())
+      ).slice(0, 8)
+    : [];
+
+  const newStock = selectedProduct ? selectedProduct.stock + (parseInt(quantity) || 0) : 0;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedProduct || !quantity || parseInt(quantity) <= 0) {
+      toast.error("Select a product and enter a valid quantity");
       return;
     }
 
     setSaving(true);
-    setError("");
-    setSuccess("");
     try {
-      await api.post(`/products/${productId}/receive`, {
-        quantity: Number(quantity),
-        reference,
-        reason,
-        note,
+      await api.post(`/products/${selectedProduct._id}/stock`, {
+        type: "receive",
+        direction: "in",
+        quantity: parseInt(quantity),
+        reason: "Purchase Order Delivery",
+        note: `${supplier ? `Supplier: ${supplier}. ` : ""}${note}`,
+        reference: `RCV-${Date.now().toString().slice(-8)}`,
       });
+      toast.success(`Received ${quantity} units of ${selectedProduct.name}`);
+      setSelectedProduct(null);
+      setProductSearch("");
       setQuantity("");
-      setReference("");
+      setSupplier("");
       setNote("");
-      setSuccess("Stock received successfully");
-      await loadData();
+      load();
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to receive stock");
+      toast.error(err.response?.data?.message || "Failed to receive stock");
     } finally {
       setSaving(false);
     }
   };
 
-  const actions = (
-    <>
-      <button className="subtle-btn" type="button" onClick={loadData}>
-        Refresh
-      </button>
-      <button
-        className="primary-btn"
-        type="button"
-        onClick={handleReceive}
-        disabled={saving}
-      >
-        {saving ? "Saving..." : "Confirm Receipt"}
-      </button>
-    </>
-  );
+  // Scanner
+  useEffect(() => {
+    if (!showScanner) return;
+    let scanner = null;
+    const init = async () => {
+      const { Html5Qrcode } = await import("html5-qrcode");
+      scanner = new Html5Qrcode("rcv-qr-reader");
+      try {
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          async (decodedText) => {
+            scanner.stop().catch(() => {});
+            setShowScanner(false);
+            const found = products.find((p) => p.sku === decodedText.toUpperCase());
+            if (found) {
+              setSelectedProduct(found);
+              setProductSearch(found.name);
+              toast.success(`Product found: ${found.name}`);
+            } else {
+              toast.error(`Product not found: ${decodedText}`);
+            }
+          },
+          () => {}
+        );
+      } catch {
+        toast.error("Camera not available");
+        setShowScanner(false);
+      }
+    };
+    init();
+    return () => { scanner?.stop().catch(() => {}); };
+  }, [showScanner, products, toast]);
 
   return (
-    <WorkspaceLayout title="Receive Stock" actions={actions}>
-      {/* Step Progress */}
-      <section className="step-progress">
-        <div className="step active">
-          <div className="step-num">1</div>
-          <span>Select item</span>
-        </div>
-        <div className="step-line" />
-        <div className="step active">
-          <div className="step-num">2</div>
-          <span>Enter Details</span>
-        </div>
-        <div className="step-line" />
-        <div className="step active">
-          <div className="step-num">3</div>
-          <span>Confirm</span>
-        </div>
-      </section>
+    <WorkspaceLayout>
+      <div style={{ maxWidth: 600 }}>
+        <form onSubmit={handleSubmit} className="panel-surface">
+          <h4 className="panel-title">Receive Stock</h4>
 
-      {error ? (
-        <p style={{ color: "#b43f47", fontWeight: 700 }}>{error}</p>
-      ) : null}
-      {success ? (
-        <p style={{ color: "#1e7d4f", fontWeight: 700 }}>{success}</p>
-      ) : null}
-
-      {/* Scan + Pending */}
-      <section className="receive-grid">
-        <article className="panel-surface receive-scan-panel">
-          <div className="scan-area">
-            <div className="scan-icon">IN</div>
-            <p>Select product and receive stock quantity</p>
-            <select
-              className="search-input"
-              value={productId}
-              onChange={(e) => setProductId(e.target.value)}
-            >
-              <option value="">Select Product</option>
-              {products.map((product) => (
-                <option key={product._id} value={product._id}>
-                  {product.name} ({product.sku})
-                </option>
-              ))}
-            </select>
-            {!loading && products.length === 0 ? (
-              <p
-                style={{ marginTop: 10, fontSize: "0.82rem", color: "#63709c" }}
-              >
-                No items found. Add products first from product management, then
-                return to this page.
-              </p>
-            ) : null}
+          {/* Product search */}
+          <div className="form-group" style={{ marginBottom: 14, position: "relative" }}>
+            <label>Product</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ flex: 1, position: "relative" }}>
+                <input
+                  value={productSearch}
+                  onChange={(e) => { setProductSearch(e.target.value); setSelectedProduct(null); }}
+                  placeholder="Search product name or SKU..."
+                  autoComplete="off"
+                />
+                {/* Dropdown */}
+                {filteredProducts.length > 0 && !selectedProduct && (
+                  <div style={{
+                    position: "absolute", top: "100%", left: 0, right: 0, zIndex: 50,
+                    background: "#fff", border: "1px solid #d1d5db", borderRadius: 6,
+                    maxHeight: 200, overflowY: "auto", boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                  }}>
+                    {filteredProducts.map((p) => (
+                      <div
+                        key={p._id}
+                        onClick={() => { setSelectedProduct(p); setProductSearch(p.name); setSupplier(p.supplier?.name || ""); }}
+                        style={{ padding: "8px 12px", cursor: "pointer", fontSize: "0.85rem", borderBottom: "1px solid #f1f5f9" }}
+                        onMouseEnter={(e) => e.target.style.background = "#f1f5f9"}
+                        onMouseLeave={(e) => e.target.style.background = "#fff"}
+                      >
+                        <span style={{ fontWeight: 600 }}>{p.name}</span>
+                        <span style={{ color: "#94a3b8", marginLeft: 8 }}>{p.sku}</span>
+                        <span style={{ float: "right", color: "#6b7280" }}>Stock: {p.stock}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button type="button" className="primary-btn" style={{ whiteSpace: "nowrap" }} onClick={() => setShowScanner(true)}>
+                Scan
+              </button>
+            </div>
           </div>
-        </article>
 
-        <article className="panel-surface receive-pending-panel">
-          <h4>Pending Shipments</h4>
-          <ul className="list-lines">
-            {pendingPOs.length === 0 ? (
-              <li>
-                <strong>No pending POs</strong>
-                <span>All shipments cleared</span>
-              </li>
-            ) : null}
-            {pendingPOs.map((po) => (
-              <li key={po._id}>
-                <strong>
-                  {po.poNumber} — {po.supplier?.name || "Supplier"}
-                </strong>
-                <span>{po.items?.length || 0} items expected</span>
-              </li>
-            ))}
-          </ul>
-        </article>
-      </section>
+          {/* Selected product preview */}
+          {selectedProduct && (
+            <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 14, marginBottom: 14 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ fontWeight: 700 }}>{selectedProduct.name}</span>
+                <span style={{ fontFamily: "monospace", color: "#6b7280" }}>{selectedProduct.sku}</span>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+                <div style={{ textAlign: "center", padding: 8, background: "#fff", borderRadius: 6, border: "1px solid #e2e8f0" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#6b7280" }}>Current Stock</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 800, color: selectedProduct.stock === 0 ? "#dc2626" : "#0f172a" }}>{selectedProduct.stock}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: 8, background: "#dbeafe", borderRadius: 6, border: "1px solid #93c5fd" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#2563eb" }}>Receiving</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#2563eb" }}>+{parseInt(quantity) || 0}</div>
+                </div>
+                <div style={{ textAlign: "center", padding: 8, background: "#dcfce7", borderRadius: 6, border: "1px solid #86efac" }}>
+                  <div style={{ fontSize: "0.7rem", color: "#059669" }}>New Stock</div>
+                  <div style={{ fontSize: "1.1rem", fontWeight: 800, color: "#059669" }}>{newStock}</div>
+                </div>
+              </div>
+            </div>
+          )}
 
-      {/* Item Details */}
-      <section
-        className="panel-surface"
-        style={{ marginTop: 12, minHeight: 200, padding: 20 }}
-      >
-        <h4>Item Details</h4>
-        {loading ? (
-          <p style={{ color: "#63709c", marginTop: 8 }}>Loading products...</p>
-        ) : null}
-        {!loading && !selectedProduct ? (
-          <p style={{ color: "#63709c", marginTop: 8 }}>
-            Select an item to receive stock.
-          </p>
-        ) : null}
-        {selectedProduct ? (
-          <>
-            <p style={{ color: "#63709c", marginTop: 8 }}>
-              Current stock: {selectedProduct.stock} | Reorder level:{" "}
-              {selectedProduct.reorderLevel}
-            </p>
-            <div className="receive-form-grid" style={{ marginTop: 16 }}>
-              <label className="settings-field">
-                Product Name
-                <input type="text" value={selectedProduct.name} readOnly />
-              </label>
-              <label className="settings-field">
-                Quantity Received
-                <input
-                  type="number"
-                  min="1"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                />
-              </label>
-              <label className="settings-field">
-                Reason
-                <input
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </label>
-              <label className="settings-field">
-                Reference (PO)
-                <input
-                  value={reference}
-                  onChange={(e) => setReference(e.target.value)}
-                  placeholder="PO-2041"
-                />
-              </label>
+          <div className="modal-form-grid">
+            <div className="form-group">
+              <label>Quantity</label>
+              <input type="number" min="1" required value={quantity} onChange={(e) => setQuantity(e.target.value)} placeholder="Enter quantity" />
             </div>
-            <label className="settings-field" style={{ marginTop: 10 }}>
-              Note
-              <input
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="Optional note"
-              />
-            </label>
-            <div style={{ marginTop: 16, display: "flex", gap: 10 }}>
-              <button
-                className="primary-btn"
-                type="button"
-                onClick={handleReceive}
-                disabled={saving}
-              >
-                {saving ? "Saving..." : "Confirm Receipt"}
-              </button>
-              <button
-                className="subtle-btn"
-                type="button"
-                onClick={() => {
-                  setQuantity("");
-                  setReference("");
-                  setNote("");
-                }}
-              >
-                Clear
-              </button>
+            <div className="form-group">
+              <label>Supplier Reference</label>
+              <input value={supplier} onChange={(e) => setSupplier(e.target.value)} placeholder="e.g. Metro Cash & Carry" />
             </div>
-          </>
-        ) : null}
-      </section>
+            <div className="form-group full-width">
+              <label>Note</label>
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} placeholder="Optional delivery details..." />
+            </div>
+          </div>
+
+          <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
+            <button type="submit" className="primary-btn" disabled={saving || !selectedProduct}>
+              {saving ? "Receiving..." : "Confirm Receipt"}
+            </button>
+            <button type="button" className="subtle-btn" onClick={() => navigate("/sm/stock-list")}>Back to Inventory</button>
+          </div>
+        </form>
+      </div>
+
+      {/* Scanner Modal */}
+      {showScanner && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowScanner(false); }}>
+          <div className="modal-box" style={{ maxWidth: 400 }}>
+            <h3>Scan Barcode</h3>
+            <div id="rcv-qr-reader" style={{ width: "100%" }}></div>
+            <div className="modal-actions" style={{ marginTop: 12 }}>
+              <button className="modal-btn-cancel" onClick={() => setShowScanner(false)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </WorkspaceLayout>
   );
 }

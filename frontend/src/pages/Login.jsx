@@ -135,7 +135,7 @@ const Login = () => {
               </button>
 
               <p className="assistive-note">
-                Don&apos;t have credentials? Contact your administrator.
+                Don&apos;t have an account? <Link to="/register" style={{ color: "var(--ws-accent)", fontWeight: 600 }}>Sign up</Link>
               </p>
             </form>
           </div>
