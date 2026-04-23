@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import logo from "../assets/logo.jpeg";
+import LogoLoop from "../components/LogoLoop";
 import "../styles/home.css";
 
 /* ── Typewriter Hook ── */
@@ -161,7 +163,7 @@ export default function Home() {
       <nav className="home-nav">
         <div className="home-nav-inner">
           <button className="home-nav-brand" onClick={() => scroll("hero")}>
-            <span className="home-nav-logo">S</span>
+            <img src={logo} alt="Stockly" style={{ width: '28px', height: '28px', borderRadius: '6px' }} />
             <span>Stockly</span>
           </button>
 
@@ -185,10 +187,18 @@ export default function Home() {
 
       {/* ── Hero ── */}
       <section id="hero" className="home-hero">
+        <div className="home-bubbles">
+          <div className="home-bubble"></div>
+          <div className="home-bubble"></div>
+          <div className="home-bubble"></div>
+          <div className="home-bubble"></div>
+          <div className="home-bubble"></div>
+          <div className="home-bubble"></div>
+        </div>
         <div className="home-hero-inner">
           <div className="home-hero-badge">
             <span className="home-hero-badge-dot"></span>
-            Now with smart reorder &amp; UPI payments
+            Enterprise-grade stock automation
           </div>
 
           <h1>
@@ -265,9 +275,9 @@ export default function Home() {
       <section className="home-stats">
         <div className="home-stats-inner">
           {[
-            { end: 10000, suffix: "+", label: "Products tracked daily" },
-            { end: 500, suffix: "+", label: "Businesses using Stockly" },
-            { end: 99, suffix: "%", label: "Stock accuracy rate" },
+            { end: 100, suffix: "ms", label: "Lightning fast loads" },
+            { end: 24, suffix: "/7", label: "Reliable service" },
+            { end: 0, suffix: " limits", label: "On your growth" },
           ].map((s, i) => (
             <StatCell key={i} {...s} />
           ))}
@@ -282,16 +292,37 @@ export default function Home() {
             <h2 className="home-section-title">Everything your team needs</h2>
           </FadeIn>
 
-          <div className="home-features-grid">
-            {features.map((f, i) => (
-              <FadeIn key={i} delay={i * 80}>
-                <div className="home-feature-card">
-                  <div className="home-feature-icon">{f.icon}</div>
-                  <h3>{f.title}</h3>
-                  <p>{f.desc}</p>
+          <div style={{ marginTop: "40px" }}>
+            <LogoLoop
+              logos={features}
+              speed={100}
+              direction="left"
+              logoHeight={180}
+              gap={32}
+              hoverSpeed={20}
+              fadeOut
+              fadeOutColor="var(--bg-main, #ffffff)"
+              renderItem={(f) => (
+                <div 
+                  className="home-feature-card" 
+                  style={{
+                    width: "300px", 
+                    height: "100%", 
+                    display: "flex", 
+                    flexDirection: "column", 
+                    justifyContent: "space-between",
+                    padding: "32px",
+                    margin: 0,
+                    boxShadow: "0 10px 30px rgba(20, 31, 52, 0.08)",
+                    border: "1px solid rgba(108, 78, 242, 0.1)"
+                  }}
+                >
+                  <div className="home-feature-icon" style={{ fontSize: "2rem", marginBottom: "16px" }}>{f.icon}</div>
+                  <h3 style={{ fontSize: "1.25rem", margin: "0 0 12px 0", color: "#111827" }}>{f.title}</h3>
+                  <p style={{ margin: 0, color: "#6b7280", lineHeight: "1.5" }}>{f.desc}</p>
                 </div>
-              </FadeIn>
-            ))}
+              )}
+            />
           </div>
         </div>
       </section>
@@ -371,7 +402,7 @@ export default function Home() {
       {/* ── Footer ── */}
       <footer className="home-footer">
         <div className="home-footer-brand">
-          <span className="home-footer-logo">S</span>
+            <img src={logo} alt="Stockly" style={{ width: '20px', height: '20px', borderRadius: '4px' }} />
           Stockly
         </div>
         <div>&copy; {new Date().getFullYear()} Stockly Inc. All rights reserved.</div>

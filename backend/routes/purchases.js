@@ -41,9 +41,9 @@ const validateItems = async (items) => {
   return null;
 };
 
-const receivePurchaseItems = async (purchase, userId) => {
+const receivePurchaseItems = async (purchase, userId, tenantId) => {
   for (const line of purchase.items) {
-    const product = await Product.findById(line.product);
+    const product = await Product.findOne({ _id: line.product, tenantId });
     if (!product) continue;
 
     const previousStock = product.stock;
@@ -62,6 +62,7 @@ const receivePurchaseItems = async (purchase, userId) => {
       reason: "Purchase received",
       reference: purchase.poNumber,
       performedBy: userId,
+      tenantId,
     });
   }
 };
@@ -71,7 +72,7 @@ router.use(protect);
 router.get("/", authorize("owner", "stockmgr"), async (req, res) => {
   try {
     const { status } = req.query;
-    const filter = {};
+    const filter = { tenantId: req.user.tenantId };
     if (status) filter.status = status;
 
     const purchases = await Purchase.find(filter)
@@ -121,10 +122,11 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
       receivedDate: status === "Received" ? new Date() : null,
       notes: notes || "",
       createdBy: req.user._id,
+      tenantId: req.user.tenantId,
     });
 
     if (purchase.status === "Received") {
-      await receivePurchaseItems(purchase, req.user._id);
+      await receivePurchaseItems(purchase, req.user._id, req.user.tenantId);
     }
 
     const populated = await Purchase.findById(purchase._id)
@@ -143,7 +145,7 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
 // Mark purchase as received (auto-update stock)
 router.patch("/:id/receive", authorize("owner", "stockmgr"), async (req, res) => {
   try {
-    const purchase = await Purchase.findById(req.params.id);
+    const purchase = await Purchase.findOne({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!purchase) return res.status(404).json({ message: "Purchase order not found" });
 
     if (purchase.status === "Received") {
@@ -154,7 +156,7 @@ router.patch("/:id/receive", authorize("owner", "stockmgr"), async (req, res) =>
     purchase.receivedDate = new Date();
     await purchase.save();
 
-    await receivePurchaseItems(purchase, req.user._id);
+    await receivePurchaseItems(purchase, req.user._id, req.user.tenantId);
 
     const populated = await Purchase.findById(purchase._id)
       .populate("supplier", "name category")
@@ -173,7 +175,7 @@ router.patch("/:id/status", authorize("owner", "stockmgr"), async (req, res) => 
       return res.status(400).json({ message: "Invalid purchase status" });
     }
 
-    const purchase = await Purchase.findById(req.params.id);
+    const purchase = await Purchase.findOne({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!purchase) return res.status(404).json({ message: "Purchase order not found" });
 
     const wasReceived = purchase.status === "Received";
@@ -182,7 +184,7 @@ router.patch("/:id/status", authorize("owner", "stockmgr"), async (req, res) => 
     if (status === "Received" && !wasReceived) {
       purchase.receivedDate = new Date();
       await purchase.save();
-      await receivePurchaseItems(purchase, req.user._id);
+      await receivePurchaseItems(purchase, req.user._id, req.user.tenantId);
     } else {
       await purchase.save();
     }

@@ -14,6 +14,7 @@ function CashierPOS() {
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("");
   const [categories, setCategories] = useState([]);
+  const [storeSettings, setStoreSettings] = useState({});
   const [loading, setLoading] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [amountTendered, setAmountTendered] = useState("");
@@ -28,12 +29,14 @@ function CashierPOS() {
   const loadProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const [prodRes, catRes] = await Promise.all([
+      const [prodRes, catRes, settingRes] = await Promise.all([
         api.get("/products"),
         api.get("/categories"),
+        api.get("/settings").catch(() => ({ data: {} })),
       ]);
       setProducts(prodRes.data || []);
       setCategories(catRes.data || []);
+      setStoreSettings(settingRes.data || {});
     } catch {
       toast.error("Failed to load products");
     } finally {
@@ -228,8 +231,8 @@ function CashierPOS() {
       .bold{font-weight:bold;}
     </style></head><body>
       <h2>STOCKLY</h2>
-      <p class="center">Rajesh General Store</p>
-      <p class="center">Shop No. 12, MG Road, Indore</p>
+      <p class="center">${storeSettings.storeName || "Stockly Store"}</p>
+      <p class="center">${storeSettings.storeAddress || "Inventory System"}</p>
       <div class="line"></div>
       <p>Receipt: ${showReceipt.saleId || ""}</p>
       <p>Date: ${new Date(showReceipt.createdAt || Date.now()).toLocaleString("en-IN")}</p>
@@ -523,7 +526,10 @@ function CashierPOS() {
           <div className="modal-box" style={{ maxWidth: 380 }}>
             <div className="pos-receipt">
               <h3 style={{ textAlign: "center", margin: "0 0 4px" }}>STOCKLY</h3>
-              <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#6b7280", margin: "0 0 12px" }}>Rajesh General Store</p>
+              <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#6b7280", margin: "0 0 4px" }}>{storeSettings.storeName || "Stockly Store"}</p>
+              {storeSettings.storeAddress && (
+                <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#6b7280", margin: "0 0 12px" }}>{storeSettings.storeAddress}</p>
+              )}
 
               <div style={{ borderTop: "1px dashed #d1d5db", margin: "8px 0" }}></div>
 

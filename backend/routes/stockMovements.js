@@ -10,7 +10,7 @@ router.use(protect);
 router.get("/", async (req, res) => {
   try {
     const { product, type, date, limit } = req.query;
-    const filter = {};
+    const filter = { tenantId: req.user.tenantId };
 
     if (product) filter.product = product;
     if (type) filter.type = type;

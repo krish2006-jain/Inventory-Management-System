@@ -11,7 +11,6 @@ const productSchema = new mongoose.Schema(
     sku: {
       type: String,
       required: true,
-      unique: true,
       trim: true,
       uppercase: true,
     },
@@ -65,11 +64,17 @@ const productSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true },
 );
 
 productSchema.index({ name: "text", sku: "text" });
+productSchema.index({ tenantId: 1, sku: 1 }, { unique: true });
 
 // Virtual: profit margin percentage
 productSchema.virtual("profitMargin").get(function () {

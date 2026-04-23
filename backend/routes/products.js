@@ -41,8 +41,9 @@ const applyStockOperation = async ({
   note,
   reference,
   userId,
+  tenantId,
 }) => {
-  const product = await Product.findById(productId);
+  const product = await Product.findOne({ _id: productId, tenantId });
   if (!product) {
     const notFoundError = new Error("Product not found");
     notFoundError.statusCode = 404;
@@ -84,6 +85,7 @@ const applyStockOperation = async ({
     note: note || "",
     reference: reference || "",
     performedBy: userId,
+    tenantId,
   });
 
   const updatedProduct = await Product.findById(product._id)
@@ -105,7 +107,7 @@ router.use(protect);
 // Low stock products (for stock alerts page)
 router.get("/low-stock", async (req, res) => {
   try {
-    const products = await Product.find()
+    const products = await Product.find({ tenantId: req.user.tenantId })
       .populate("category", "name")
       .populate("supplier", "name");
 
@@ -122,7 +124,10 @@ router.get("/low-stock", async (req, res) => {
 // Barcode lookup
 router.get("/barcode/:sku", async (req, res) => {
   try {
-    const product = await Product.findOne({ sku: req.params.sku.toUpperCase() })
+    const product = await Product.findOne({
+      sku: req.params.sku.toUpperCase(),
+      tenantId: req.user.tenantId,
+    })
       .populate("category", "name")
       .populate("supplier", "name");
 
@@ -136,7 +141,7 @@ router.get("/barcode/:sku", async (req, res) => {
 router.get("/", async (req, res) => {
   try {
     const { search, category, supplier, status } = req.query;
-    const filter = {};
+    const filter = { tenantId: req.user.tenantId };
 
     if (search) {
       filter.$or = [
@@ -177,6 +182,7 @@ router.get("/", async (req, res) => {
 router.get("/low-stock", async (req, res) => {
   try {
     const products = await Product.find({
+      tenantId: req.user.tenantId,
       $expr: { $lte: ["$stock", "$reorderLevel"] },
     })
       .populate("category", "name")
@@ -192,7 +198,7 @@ router.get("/low-stock", async (req, res) => {
 router.get("/movements", async (req, res) => {
   try {
     const { productId, limit = 50 } = req.query;
-    const filter = {};
+    const filter = { tenantId: req.user.tenantId };
 
     if (productId && mongoose.Types.ObjectId.isValid(productId)) {
       filter.product = productId;
@@ -212,7 +218,10 @@ router.get("/movements", async (req, res) => {
 
 router.get("/:id", async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id)
+    const product = await Product.findOne({
+      _id: req.params.id,
+      tenantId: req.user.tenantId,
+    })
       .populate("category", "name")
       .populate("supplier", "name email phone");
 
@@ -256,13 +265,13 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
       });
     }
 
-    const categoryExists = await Category.exists({ _id: category });
+    const categoryExists = await Category.exists({ _id: category, tenantId: req.user.tenantId });
     if (!categoryExists) {
       return res.status(400).json({ message: "Invalid category" });
     }
 
     if (supplier) {
-      const supplierExists = await Supplier.exists({ _id: supplier });
+      const supplierExists = await Supplier.exists({ _id: supplier, tenantId: req.user.tenantId });
       if (!supplierExists) {
         return res.status(400).json({ message: "Invalid supplier" });
       }
@@ -281,6 +290,7 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
       unit,
       location,
       createdBy: req.user._id,
+      tenantId: req.user.tenantId,
     });
 
     const populated = await Product.findById(product._id)
@@ -319,23 +329,27 @@ router.put("/:id", authorize("owner", "stockmgr"), async (req, res) => {
     });
 
     if (updates.category) {
-      const categoryExists = await Category.exists({ _id: updates.category });
+      const categoryExists = await Category.exists({ _id: updates.category, tenantId: req.user.tenantId });
       if (!categoryExists) {
         return res.status(400).json({ message: "Invalid category" });
       }
     }
 
     if (updates.supplier) {
-      const supplierExists = await Supplier.exists({ _id: updates.supplier });
+      const supplierExists = await Supplier.exists({ _id: updates.supplier, tenantId: req.user.tenantId });
       if (!supplierExists) {
         return res.status(400).json({ message: "Invalid supplier" });
       }
     }
 
-    const product = await Product.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    })
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.user.tenantId },
+      updates,
+      {
+        new: true,
+        runValidators: true,
+      }
+    )
       .populate("category", "name")
       .populate("supplier", "name");
 
@@ -354,7 +368,10 @@ router.put("/:id", authorize("owner", "stockmgr"), async (req, res) => {
 
 router.delete("/:id", authorize("owner"), async (req, res) => {
   try {
-    const deleted = await Product.findByIdAndDelete(req.params.id);
+    const deleted = await Product.findOneAndDelete({
+      _id: req.params.id,
+      tenantId: req.user.tenantId,
+    });
 
     if (!deleted) {
       return res.status(404).json({ message: "Product not found" });
@@ -383,6 +400,7 @@ router.post(
         note,
         reference,
         userId: req.user._id,
+        tenantId: req.user.tenantId,
       });
 
       res.status(200).json(result);
@@ -410,6 +428,7 @@ router.post(
         note,
         reference,
         userId: req.user._id,
+        tenantId: req.user.tenantId,
       });
 
       res.status(200).json(result);
@@ -441,6 +460,7 @@ router.post("/:id/adjust", authorize("owner", "stockmgr"), async (req, res) => {
       note,
       reference,
       userId: req.user._id,
+      tenantId: req.user.tenantId,
     });
 
     res.status(200).json(result);

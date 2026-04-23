@@ -9,12 +9,13 @@ router.use(protect);
 
 router.get("/", async (req, res) => {
   try {
-    const categories = await Category.find().sort({ name: 1 });
+    const categories = await Category.find({ tenantId: req.user.tenantId }).sort({ name: 1 });
 
     const categoriesWithCount = await Promise.all(
       categories.map(async (category) => {
         const productCount = await Product.countDocuments({
           category: category._id,
+          tenantId: req.user.tenantId,
         });
         return {
           ...category.toObject(),
@@ -43,6 +44,7 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
       color,
       icon,
       createdBy: req.user._id,
+      tenantId: req.user.tenantId,
     });
 
     res.status(201).json({ ...category.toObject(), productCount: 0 });
@@ -65,10 +67,14 @@ router.put("/:id", authorize("owner", "stockmgr"), async (req, res) => {
       }
     });
 
-    const category = await Category.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    });
+    const category = await Category.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.user.tenantId },
+      updates,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!category) {
       return res.status(404).json({ message: "Category not found" });
@@ -76,6 +82,7 @@ router.put("/:id", authorize("owner", "stockmgr"), async (req, res) => {
 
     const productCount = await Product.countDocuments({
       category: category._id,
+      tenantId: req.user.tenantId,
     });
 
     res.status(200).json({ ...category.toObject(), productCount });
@@ -89,14 +96,17 @@ router.put("/:id", authorize("owner", "stockmgr"), async (req, res) => {
 
 router.delete("/:id", authorize("owner"), async (req, res) => {
   try {
-    const inUse = await Product.exists({ category: req.params.id });
+    const inUse = await Product.exists({ category: req.params.id, tenantId: req.user.tenantId });
     if (inUse) {
       return res.status(400).json({
         message: "Cannot delete category while products are linked to it",
       });
     }
 
-    const deleted = await Category.findByIdAndDelete(req.params.id);
+    const deleted = await Category.findOneAndDelete({
+      _id: req.params.id,
+      tenantId: req.user.tenantId,
+    });
 
     if (!deleted) {
       return res.status(404).json({ message: "Category not found" });

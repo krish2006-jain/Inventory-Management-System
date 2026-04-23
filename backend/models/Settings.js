@@ -15,6 +15,12 @@ const settingsSchema = new mongoose.Schema(
     lowStockEmail: { type: String, default: "" },
     dailySummaryEnabled: { type: Boolean, default: false },
     dailySummaryTime: { type: String, default: "18:00" },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
   },
   { timestamps: true },
 );

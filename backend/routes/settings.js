@@ -7,9 +7,9 @@ const router = express.Router();
 // Get settings (any authenticated user can read for POS tax etc.)
 router.get("/", protect, async (req, res) => {
   try {
-    let settings = await Settings.findOne();
+    let settings = await Settings.findOne({ tenantId: req.user.tenantId });
     if (!settings) {
-      settings = await Settings.create({});
+      settings = await Settings.create({ tenantId: req.user.tenantId });
     }
     res.status(200).json(settings);
   } catch (error) {
@@ -34,9 +34,9 @@ router.patch("/", protect, authorize("owner"), async (req, res) => {
       }
     });
 
-    let settings = await Settings.findOne();
+    let settings = await Settings.findOne({ tenantId: req.user.tenantId });
     if (!settings) {
-      settings = await Settings.create(updates);
+      settings = await Settings.create({ ...updates, tenantId: req.user.tenantId });
     } else {
       Object.assign(settings, updates);
       await settings.save();

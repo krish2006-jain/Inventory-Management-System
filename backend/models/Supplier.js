@@ -40,11 +40,16 @@ const supplierSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true },
 );
 
-supplierSchema.index({ name: 1, createdBy: 1 }, { unique: true });
+supplierSchema.index({ tenantId: 1, name: 1 }, { unique: true });
 
 const Supplier = mongoose.model("Supplier", supplierSchema);
 

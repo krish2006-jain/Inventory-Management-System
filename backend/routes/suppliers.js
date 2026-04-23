@@ -45,7 +45,7 @@ router.get("/", async (req, res) => {
     const search = String(req.query.search || "").trim();
     const searchRegex = search ? new RegExp(escapeRegex(search), "i") : null;
 
-    const pipeline = [];
+    const pipeline = [{ $match: { tenantId: req.user.tenantId } }];
     if (searchRegex) {
       pipeline.push({
         $match: {
@@ -64,7 +64,11 @@ router.get("/", async (req, res) => {
           from: "products",
           let: { supplierId: "$_id" },
           pipeline: [
-            { $match: { $expr: { $eq: ["$supplier", "$$supplierId"] } } },
+            { $match: { 
+                $expr: { $eq: ["$supplier", "$$supplierId"] },
+                tenantId: req.user.tenantId
+              } 
+            },
             { $count: "count" },
           ],
           as: "productStats",
@@ -99,6 +103,7 @@ router.post("/", authorize("owner"), async (req, res) => {
     const supplier = await Supplier.create({
       ...normalized,
       createdBy: req.user._id,
+      tenantId: req.user.tenantId,
     });
 
     res.status(201).json({ ...supplier.toObject(), productCount: 0 });
@@ -118,10 +123,14 @@ router.put("/:id", authorize("owner"), async (req, res) => {
       return res.status(400).json({ message: "Supplier name is required" });
     }
 
-    const supplier = await Supplier.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    });
+    const supplier = await Supplier.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.user.tenantId },
+      updates,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
 
     if (!supplier) {
       return res.status(404).json({ message: "Supplier not found" });
@@ -129,6 +138,7 @@ router.put("/:id", authorize("owner"), async (req, res) => {
 
     const productCount = await Product.countDocuments({
       supplier: supplier._id,
+      tenantId: req.user.tenantId,
     });
 
     res.status(200).json({ ...supplier.toObject(), productCount });
@@ -142,14 +152,14 @@ router.put("/:id", authorize("owner"), async (req, res) => {
 
 router.delete("/:id", authorize("owner"), async (req, res) => {
   try {
-    const productLinked = await Product.exists({ supplier: req.params.id });
+    const productLinked = await Product.exists({ supplier: req.params.id, tenantId: req.user.tenantId });
     if (productLinked) {
       return res.status(400).json({
         message: "Cannot delete supplier while products are linked",
       });
     }
 
-    const deleted = await Supplier.findByIdAndDelete(req.params.id);
+    const deleted = await Supplier.findOneAndDelete({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!deleted) {
       return res.status(404).json({ message: "Supplier not found" });
     }

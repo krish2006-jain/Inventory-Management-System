@@ -16,12 +16,12 @@ router.post("/", protect, authorize("cashier", "owner"), async (req, res) => {
     }
 
     // Generate sale ID
-    const count = await Sale.countDocuments();
+    const count = await Sale.countDocuments({ tenantId: req.user.tenantId });
     const saleId = `SALE-${String(count + 1).padStart(5, "0")}`;
 
     // Deduct stock for each item
     for (const item of items) {
-      const product = await Product.findById(item.product);
+      const product = await Product.findOne({ _id: item.product, tenantId: req.user.tenantId });
       if (!product) {
         return res.status(400).json({ message: `Product not found: ${item.name}` });
       }
@@ -44,6 +44,7 @@ router.post("/", protect, authorize("cashier", "owner"), async (req, res) => {
         reason: "Sale",
         reference: saleId,
         performedBy: req.user._id,
+        tenantId: req.user.tenantId,
       });
     }
 
@@ -63,6 +64,7 @@ router.post("/", protect, authorize("cashier", "owner"), async (req, res) => {
       changeDue: changeDue || 0,
       cashier: req.user._id,
       cashierName: req.user.username,
+      tenantId: req.user.tenantId,
     });
 
     res.status(201).json(sale);
@@ -78,7 +80,7 @@ router.get("/today", protect, authorize("cashier", "owner"), async (req, res) =>
     const dayStart = new Date();
     dayStart.setHours(0, 0, 0, 0);
 
-    const filter = { createdAt: { $gte: dayStart } };
+    const filter = { createdAt: { $gte: dayStart }, tenantId: req.user.tenantId };
     // Cashiers see only their own sales
     if (req.user.role === "cashier") {
       filter.cashier = req.user._id;
@@ -104,7 +106,7 @@ router.get("/today", protect, authorize("cashier", "owner"), async (req, res) =>
 router.get("/", protect, authorize("owner"), async (req, res) => {
   try {
     const { from, to, limit } = req.query;
-    const filter = {};
+    const filter = { tenantId: req.user.tenantId };
     if (from || to) {
       filter.createdAt = {};
       if (from) filter.createdAt.$gte = new Date(from);

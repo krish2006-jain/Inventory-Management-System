@@ -6,7 +6,6 @@ const categorySchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      unique: true,
       maxlength: 80,
     },
     description: {
@@ -29,9 +28,16 @@ const categorySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   { timestamps: true },
 );
+
+categorySchema.index({ tenantId: 1, name: 1 }, { unique: true });
 
 const Category = mongoose.model("Category", categorySchema);
 

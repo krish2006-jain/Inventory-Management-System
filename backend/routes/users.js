@@ -12,7 +12,7 @@ router.use(protect, authorize("owner"));
 // List all users
 router.get("/", async (req, res) => {
   try {
-    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    const users = await User.find({ tenantId: req.user.tenantId }).select("-password").sort({ createdAt: -1 });
     res.status(200).json(users);
   } catch (error) {
     res.status(500).json({ message: "Failed to load users" });
@@ -54,6 +54,7 @@ router.post("/", async (req, res) => {
       role,
       status: "Active",
       mustChangePassword: true,
+      tenantId: req.user.tenantId,
     });
 
     // Send credential email (best-effort, don't block on failure)
@@ -99,7 +100,7 @@ router.patch("/:id/status", async (req, res) => {
       return res.status(400).json({ message: "You cannot suspend your own account" });
     }
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -137,7 +138,7 @@ router.patch("/:id/role", async (req, res) => {
       return res.status(400).json({ message: "You cannot change your own role" });
     }
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -168,7 +169,7 @@ router.patch("/:id/reset-password", async (req, res) => {
       return res.status(400).json({ message: "Use change-password for your own account" });
     }
 
-    const user = await User.findById(req.params.id);
+    const user = await User.findOne({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -210,10 +211,14 @@ router.patch("/:id", async (req, res) => {
       }
     });
 
-    const user = await User.findByIdAndUpdate(req.params.id, updates, {
-      new: true,
-      runValidators: true,
-    }).select("-password");
+    const user = await User.findOneAndUpdate(
+      { _id: req.params.id, tenantId: req.user.tenantId }, 
+      updates, 
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).select("-password");
 
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -234,7 +239,7 @@ router.delete("/:id", async (req, res) => {
         .json({ message: "You cannot delete your own account" });
     }
 
-    const userToDelete = await User.findById(req.params.id);
+    const userToDelete = await User.findOne({ _id: req.params.id, tenantId: req.user.tenantId });
     if (!userToDelete) {
       return res.status(404).json({ message: "User not found" });
     }
@@ -243,7 +248,7 @@ router.delete("/:id", async (req, res) => {
       return res.status(400).json({ message: "Owner accounts cannot be deleted" });
     }
 
-    await User.findByIdAndDelete(req.params.id);
+    await User.findOneAndDelete({ _id: req.params.id, tenantId: req.user.tenantId });
     res.status(200).json({ message: "User deleted" });
   } catch (error) {
     res.status(500).json({ message: "Failed to delete user" });

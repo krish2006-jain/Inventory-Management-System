@@ -192,20 +192,64 @@
 }
 
 /* ── Hero ── */
-.home-hero {
+.stockly-home .home-hero {
   position: relative;
-  padding: 120px 24px 80px;
-  text-align: center;
-  background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
-  background-size: 20px 20px;
   overflow: hidden;
+  padding: 120px 24px 64px;
+  text-align: center;
+  background: radial-gradient(
+    circle at top right,
+    rgba(108, 78, 242, 0.04),
+    transparent 50%
+  ),
+  radial-gradient(
+    circle at bottom left,
+    rgba(239, 68, 68, 0.03),
+    transparent 50%
+  );
 }
 
-.home-hero-inner {
-  max-width: 720px;
+/* ── Hero Animated Bubbles ── */
+.stockly-home .home-bubbles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.stockly-home .home-bubble {
+  position: absolute;
+  bottom: -100px;
+  background: rgba(108, 78, 242, 0.05);
+  border-radius: 50%;
+  animation: floatUp 10s infinite ease-in;
+}
+.stockly-home .home-bubble:nth-child(1) { width: 40px; height: 40px; left: 10%; animation-duration: 8s; }
+.stockly-home .home-bubble:nth-child(2) { width: 20px; height: 20px; left: 20%; animation-duration: 5s; animation-delay: 1s; }
+.stockly-home .home-bubble:nth-child(3) { width: 50px; height: 50px; left: 35%; animation-duration: 12s; animation-delay: 2s; }
+.stockly-home .home-bubble:nth-child(4) { width: 80px; height: 80px; left: 50%; animation-duration: 14s; animation-delay: 0s; }
+.stockly-home .home-bubble:nth-child(5) { width: 35px; height: 35px; left: 65%; animation-duration: 10s; animation-delay: 3s; }
+.stockly-home .home-bubble:nth-child(6) { width: 60px; height: 60px; left: 80%; animation-duration: 11s; animation-delay: 1s; }
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-1000px) scale(1.5);
+    opacity: 0;
+  }
+}
+
+.stockly-home .home-hero-inner {
+  max-width: 800px;
   margin: 0 auto;
   position: relative;
-  z-index: 2;
+  z-index: 1;
 }
 
 .home-hero-badge {
@@ -645,6 +689,12 @@
   text-align: left;
   border-collapse: separate;
   border-spacing: 0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.home-roles-table:hover {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
 .home-roles-table thead tr {
@@ -671,11 +721,24 @@
   border-bottom: none;
 }
 
-.home-roles-table tr:hover {
-  background: #fafafa;
+.stockly-home .home-roles-table tr {
+  transition: background-color 0.2s ease;
 }
 
-.home-perm-name {
+.stockly-home .home-roles-table tr td {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.stockly-home .home-roles-table tr:hover td {
+  background: #f1f5f9;
+}
+
+.stockly-home .home-roles-table tr:hover td:first-child {
+  transform: translateX(4px);
+  color: #6c4ef2;
+}
+
+.stockly-home .home-perm-name {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -867,15 +930,15 @@
 
 .home-fade-in {
   opacity: 0;
-  transform: translateY(16px);
+  transform: translateY(30px) scale(0.95);
   transition:
-    opacity 0.6s ease,
-    transform 0.6s ease;
+    opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .home-fade-in--visible {
   opacity: 1;
-  transform: translateY(0);
+  transform: translateY(0) scale(1);
 }
 
 /* ── Responsive ── */

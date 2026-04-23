@@ -20,6 +20,9 @@ export const protect = async (req, res, next) => {
           .json({ message: "Not authorized, user not found" });
       }
 
+      // Attach tenantId to the user object for queries
+      req.user.tenantId = req.user.role === "owner" ? req.user._id : req.user.tenantId;
+
       return next();
     } catch (err) {
       console.error("Token verification failed", err.message);

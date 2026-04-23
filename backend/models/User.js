@@ -32,6 +32,11 @@ const userScheme = new mongoose.Schema(
       type: String,
       default: null,
     },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      // required: true, (Omitted because owners themselves are created initially without it, until we assign it to themselves, or we leave it empty for owner)
+    },
     phone: {
       type: String,
       default: null,

@@ -130,3 +130,35 @@ export const sendPasswordResetEmail = async ({ to, name, password, loginUrl }) =
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Send password changed email
+ */
+export const sendPasswordChangedEmail = async ({ to, name }) => {
+  try {
+    const transport = await getTransporter();
+    const storeName = process.env.STORE_NAME || "Stockly";
+
+    const info = await transport.sendMail({
+      from: `"${storeName}" <${process.env.SMTP_USER || "noreply@stockly.com"}>`,
+      to,
+      subject: `Your ${storeName} password was changed`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; padding: 24px; background: #f9fafb; border-radius: 8px;">
+          <h2 style="margin: 0 0 8px; font-size: 18px; color: #1e293b;">Security Alert</h2>
+          <p style="color: #475569; font-size: 14px;">Hi ${name},</p>
+          <p style="color: #475569; font-size: 14px;">The password for your ${storeName} account was recently changed. If you performed this action, you can ignore this email.</p>
+          <p style="color: #475569; font-size: 14px;">If you didn't do this, please contact your administrator immediately.</p>
+        </div>
+      `,
+    });
+
+    if (info.messageId && !process.env.SMTP_HOST) {
+      console.log("[Mailer] Preview URL:", nodemailer.getTestMessageUrl(info));
+    }
+    return { success: true };
+  } catch (error) {
+    console.log("[Mailer] Failed to send changed email:", error.message);
+    return { success: false, error: error.message };
+  }
+};

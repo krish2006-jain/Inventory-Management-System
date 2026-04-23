@@ -13,9 +13,9 @@ router.use(protect);
 router.get("/stats", async (req, res) => {
   try {
     const [totalProducts, totalCategories, products] = await Promise.all([
-      Product.countDocuments(),
-      Category.countDocuments(),
-      Product.find({}, "stock reorderLevel unitPrice costPrice name"),
+      Product.countDocuments({ tenantId: req.user.tenantId }),
+      Category.countDocuments({ tenantId: req.user.tenantId }),
+      Product.find({ tenantId: req.user.tenantId }, "stock reorderLevel unitPrice costPrice name"),
     ]);
 
     const lowStock = products.filter((p) => p.stock > 0 && p.stock <= p.reorderLevel).length;
@@ -50,7 +50,7 @@ router.get("/weekly-sales", async (req, res) => {
     const weekAgo = new Date(now);
     weekAgo.setDate(weekAgo.getDate() - 7);
 
-    const sales = await Sale.find({ createdAt: { $gte: weekAgo } });
+    const sales = await Sale.find({ createdAt: { $gte: weekAgo }, tenantId: req.user.tenantId });
 
     // Group by day
     const days = {};
@@ -86,7 +86,7 @@ router.get("/weekly-sales", async (req, res) => {
 // Recent transactions (movements + sales)
 router.get("/recent-activity", async (req, res) => {
   try {
-    const movements = await StockMovement.find()
+    const movements = await StockMovement.find({ tenantId: req.user.tenantId })
       .populate("product", "name sku")
       .populate("performedBy", "username role")
       .sort({ createdAt: -1 })
@@ -101,8 +101,8 @@ router.get("/recent-activity", async (req, res) => {
 // Category stock distribution
 router.get("/category-distribution", async (req, res) => {
   try {
-    const categories = await Category.find({}, "name");
-    const products = await Product.find({}, "category stock unitPrice");
+    const categories = await Category.find({ tenantId: req.user.tenantId }, "name");
+    const products = await Product.find({ tenantId: req.user.tenantId }, "category stock unitPrice");
 
     const dist = categories.map((cat) => {
       const catProducts = products.filter((p) => String(p.category) === String(cat._id));
@@ -123,7 +123,7 @@ router.get("/category-distribution", async (req, res) => {
 // Top selling products
 router.get("/top-products", async (req, res) => {
   try {
-    const sales = await Sale.find();
+    const sales = await Sale.find({ tenantId: req.user.tenantId });
     const productSales = {};
 
     sales.forEach((sale) => {
