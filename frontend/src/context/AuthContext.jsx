@@ -26,8 +26,9 @@ export function AuthProvider({ children }) {
     }
   }, [token]);
 
-  const login = async (email, password, role) => {
-    const res = await api.post("/auth/login", { email, password, role });
+  // Login — no role needed, auto-detected from credentials
+  const login = async (email, password) => {
+    const res = await api.post("/auth/login", { email, password });
     const data = res.data;
     localStorage.setItem("token", data.token);
     setToken(data.token);
@@ -39,23 +40,7 @@ export function AuthProvider({ children }) {
       phone: data.phone,
       avator: data.avator,
       status: data.status,
-    });
-    return data;
-  };
-
-  const register = async (fields) => {
-    const res = await api.post("/auth/register", fields);
-    const data = res.data;
-    localStorage.setItem("token", data.token);
-    setToken(data.token);
-    setUser({
-      id: data.id,
-      role: data.role,
-      email: data.email,
-      username: data.username,
-      phone: data.phone,
-      avator: data.avator,
-      status: data.status,
+      mustChangePassword: data.mustChangePassword,
     });
     return data;
   };
@@ -67,9 +52,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, token, loading, login, register, logout }}
-    >
+    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

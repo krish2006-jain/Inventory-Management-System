@@ -4,73 +4,94 @@ import { protect } from "../middleware/auth.js";
 import jwt from "jsonwebtoken";
 const router = express.Router();
 
-//Register
-router.post("/register", async (req, res) => {
-  const { username, email, password, avator, role, phone, status } = req.body;
+// Check if system needs initial setup (no owner exists yet)
+router.get("/setup-check", async (req, res) => {
   try {
-    if (!username || !email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Please fill all required information" });
-    }
-    if (role && !["owner", "stockmgr", "cashier"].includes(role)) {
-      return res.status(400).json({ message: "Invalid role selected" });
+    const ownerExists = await User.exists({ role: "owner" });
+    res.json({ needsSetup: !ownerExists });
+  } catch {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Register — ONLY works if no owner account exists (first-time setup)
+router.post("/register", async (req, res) => {
+  try {
+    const { username, email, password, phone } = req.body;
+
+    // Check if an owner already exists
+    const ownerExists = await User.exists({ role: "owner" });
+    if (ownerExists) {
+      return res.status(403).json({
+        message: "Registration is closed. Only the owner can create accounts.",
+      });
     }
 
-    const userExists = await User.findOne({ $or: [{ email }, { username }] });
-    if (userExists) {
-      return res
-        .status(400)
-        .json({ message: "User already exists with same email or username" });
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" });
+    }
+
+    const exists = await User.findOne({ $or: [{ email }, { username }] });
+    if (exists) {
+      return res.status(400).json({ message: "User already exists" });
     }
 
     const user = await User.create({
       username,
       email,
       password,
-      phone,
-      avator,
-      role,
-      status,
+      phone: phone || null,
+      role: "owner",
+      status: "Active",
     });
-    const token = generateToken(user._id);
+
     res.status(201).json({
       id: user._id,
       role: user.role,
-      avator: user.avator,
-      username: user.username,
       email: user.email,
+      username: user.username,
       phone: user.phone,
-      status: user.status,
-      token,
+      token: generateToken(user._id),
     });
   } catch (err) {
-    console.log("ERROR:", err);
+    console.log(err);
+    if (err?.code === 11000) {
+      return res.status(400).json({ message: "Email or username already taken" });
+    }
     res.status(500).json({ message: "Server error" });
   }
 });
 
-//login
+// Login — auto-detect role, no role selector needed
 router.post("/login", async (req, res) => {
-  const { role, email, password } = req.body;
+  const { email, password } = req.body;
   try {
     if (!email || !password) {
       return res
         .status(400)
-        .json({ message: "Fill all the  required information" });
+        .json({ message: "Email and password are required" });
     }
+
     const user = await User.findOne({ email });
     if (!user || !(await user.matchPassword(password))) {
       return res
         .status(401)
-        .json({ message: "Enter a valid email and password" });
+        .json({ message: "Invalid email or password" });
     }
 
-    if (role && user.role !== role) {
+    // Check if account is suspended
+    if (user.status === "Suspended") {
       return res
         .status(403)
-        .json({ message: `This account is not registered as ${role}` });
+        .json({ message: "Your account has been suspended. Contact your administrator." });
     }
+
+    // Update last active timestamp
+    user.lastActive = new Date();
+    await user.save({ validateBeforeSave: false });
 
     res.status(200).json({
       id: user._id,
@@ -80,21 +101,59 @@ router.post("/login", async (req, res) => {
       phone: user.phone,
       avator: user.avator,
       status: user.status,
+      mustChangePassword: user.mustChangePassword || false,
       token: generateToken(user._id),
     });
   } catch (err) {
-    console.log(err); // VERY IMPORTANT
+    console.log(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-//to store the information of myself
+// Get current user info
 router.get("/me", protect, async (req, res) => {
+  // Update last active on every /me call
+  if (req.user) {
+    await User.findByIdAndUpdate(req.user._id, { lastActive: new Date() });
+  }
   res.status(200).json(req.user);
 });
 
-//generaating jwt token
+// Change own password (for first-login password change)
+router.patch("/change-password", protect, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  try {
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters" });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Current password is incorrect" });
+    }
+
+    user.password = newPassword;
+    user.mustChangePassword = false;
+    await user.save();
+
+    res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Generate JWT token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "30d" });
 };
+
 export default router;

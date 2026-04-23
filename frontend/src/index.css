@@ -1,4 +1,13 @@
+@import "tailwindcss";
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;700;800&family=Sora:wght@600;700&display=swap");
+
+/* Reverse Tailwind Preflight stripping bold weights */
+@layer base {
+  h1, h2, h3, h4, h5, h6, b, strong {
+    font-weight: 700;
+  }
+}
+
 
 :root {
   font-family: Manrope, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;

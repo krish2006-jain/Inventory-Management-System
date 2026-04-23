@@ -1,388 +1,263 @@
-import { useEffect, useMemo, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import WorkspaceLayout from "../components/WorkspaceLayout";
+import { useToast } from "../components/ToastProvider";
 import api from "../services/api";
 
-const moneyFormatter = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
-
 function Purchases() {
-  const [orders, setOrders] = useState([]);
-  const [summary, setSummary] = useState({
-    totalSpending: 0,
-    activePOs: 0,
-    receivedCount: 0,
-  });
-  const [suppliers, setSuppliers] = useState([]);
+  const toast = useToast();
+  const location = useLocation();
+  const [purchases, setPurchases] = useState([]);
   const [products, setProducts] = useState([]);
-  const [statusFilter, setStatusFilter] = useState("");
-  const [search, setSearch] = useState("");
-  const [showForm, setShowForm] = useState(false);
+  const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-
+  const [confirmReceive, setConfirmReceive] = useState(null);
   const [form, setForm] = useState({
-    poNumber: `PO-${Date.now().toString().slice(-6)}`,
-    supplierId: "",
-    productId: "",
-    quantity: "",
-    unitCost: "",
-    status: "Pending",
-    expectedDate: "",
+    supplier: "",
+    items: [{ product: "", quantity: "", unitCost: "" }],
+    notes: "",
   });
 
-  const loadMeta = async () => {
-    try {
-      const [supplierRes, productRes] = await Promise.all([
-        api.get("/suppliers"),
-        api.get("/products"),
-      ]);
-      setSuppliers(supplierRes.data || []);
-      setProducts(productRes.data || []);
-    } catch {
-      setError("Failed to load suppliers/products for purchase creation");
-    }
-  };
-
-  const loadOrders = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
-      const params = {};
-      if (statusFilter) params.status = statusFilter;
-
-      const res = await api.get("/purchases", { params });
-      setOrders(res.data?.purchases || []);
-      setSummary(
-        res.data?.summary || {
-          totalSpending: 0,
-          activePOs: 0,
-          receivedCount: 0,
-        },
-      );
+      const [purRes, prodRes, supRes] = await Promise.all([
+        api.get("/purchases"),
+        api.get("/products"),
+        api.get("/suppliers"),
+      ]);
+      setPurchases(purRes.data || []);
+      setProducts(prodRes.data || []);
+      setSuppliers(supRes.data || []);
     } catch {
-      setError("Failed to load purchase orders");
+      toast.error("Failed to load purchases");
     } finally {
       setLoading(false);
     }
+  }, [toast]);
+
+  useEffect(() => { load(); }, [load]);
+
+  // If navigated from Stock Alerts with a reorder product
+  useEffect(() => {
+    const reorderProduct = location.state?.reorderProduct;
+    if (reorderProduct) {
+      setForm({
+        supplier: reorderProduct.supplier?._id || reorderProduct.supplier || "",
+        items: [{
+          product: reorderProduct._id,
+          quantity: String(reorderProduct.reorderLevel * 3),
+          unitCost: String(reorderProduct.costPrice || reorderProduct.unitPrice || ""),
+        }],
+        notes: `Reorder for ${reorderProduct.name} (current stock: ${reorderProduct.stock})`,
+      });
+      setShowForm(true);
+      // Clear location state
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+
+  const addItem = () => setForm({ ...form, items: [...form.items, { product: "", quantity: "", unitCost: "" }] });
+  const removeItem = (idx) => setForm({ ...form, items: form.items.filter((_, i) => i !== idx) });
+  const updateItem = (idx, key, val) => {
+    const items = [...form.items];
+    items[idx] = { ...items[idx], [key]: val };
+    setForm({ ...form, items });
   };
 
-  useEffect(() => {
-    loadMeta();
-  }, []);
+  const calcTotal = () => form.items.reduce((sum, item) => sum + (parseFloat(item.quantity) || 0) * (parseFloat(item.unitCost) || 0), 0);
 
-  useEffect(() => {
-    loadOrders();
-  }, [statusFilter]);
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    const validItems = form.items.filter((item) => item.product && item.quantity > 0);
+    if (validItems.length === 0) { toast.error("Add at least one product"); return; }
 
-  const filteredOrders = useMemo(() => {
-    if (!search.trim()) return orders;
-    const key = search.toLowerCase();
-    return orders.filter((order) =>
-      [order.poNumber, order.supplier?.name, order.status]
-        .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(key)),
-    );
-  }, [orders, search]);
-
-  const handleCreatePO = async (event) => {
-    event.preventDefault();
     setSaving(true);
-    setError("");
     try {
       await api.post("/purchases", {
-        poNumber: form.poNumber,
-        supplierId: form.supplierId,
-        items: [
-          {
-            productId: form.productId,
-            quantity: Number(form.quantity),
-            unitCost: Number(form.unitCost),
-          },
-        ],
-        status: form.status,
-        expectedDate: form.expectedDate || null,
+        supplier: form.supplier || null,
+        items: validItems.map((item) => ({
+          product: item.product,
+          quantity: parseInt(item.quantity),
+          unitCost: parseFloat(item.unitCost) || 0,
+        })),
+        notes: form.notes,
       });
-      setForm({
-        poNumber: `PO-${Date.now().toString().slice(-6)}`,
-        supplierId: "",
-        productId: "",
-        quantity: "",
-        unitCost: "",
-        status: "Pending",
-        expectedDate: "",
-      });
+      toast.success("Purchase order created");
       setShowForm(false);
-      await loadOrders();
+      setForm({ supplier: "", items: [{ product: "", quantity: "", unitCost: "" }], notes: "" });
+      await load();
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to create purchase order",
-      );
+      toast.error(err.response?.data?.message || "Failed to create purchase order");
     } finally {
       setSaving(false);
     }
   };
 
-  const updateStatus = async (orderId, status) => {
+  const handleReceive = async () => {
+    if (!confirmReceive) return;
     try {
-      await api.patch(`/purchases/${orderId}/status`, { status });
-      await loadOrders();
+      await api.patch(`/purchases/${confirmReceive._id}/receive`);
+      toast.success("Purchase order received. Stock updated.");
+      setConfirmReceive(null);
+      await load();
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to update purchase status",
-      );
+      toast.error(err.response?.data?.message || "Failed to receive");
     }
   };
 
-  const actions = (
-    <>
-      <input
-        className="search-input compact"
-        type="search"
-        placeholder="Search PO"
-        aria-label="Search purchase orders"
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-      />
-      <button className="subtle-btn" type="button" onClick={loadOrders}>
-        Refresh
-      </button>
-      <button
-        className="primary-btn"
-        type="button"
-        onClick={() => setShowForm((prev) => !prev)}
-      >
-        {showForm ? "Close" : "Create PO"}
-      </button>
-    </>
-  );
+  const statusCounts = {
+    pending: purchases.filter((p) => p.status === "Pending").length,
+    received: purchases.filter((p) => p.status === "Received").length,
+    total: purchases.length,
+  };
 
   return (
-    <WorkspaceLayout title="Purchases" actions={actions}>
-      {showForm ? (
-        <section className="panel-surface" style={{ marginTop: 14 }}>
-          <h4 style={{ marginTop: 0 }}>Create Purchase Order</h4>
-          <form
-            onSubmit={handleCreatePO}
-            className="settings-form-grid"
-            style={{ marginTop: 12 }}
-          >
-            <label className="settings-field">
-              PO Number
-              <input
-                required
-                value={form.poNumber}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, poNumber: e.target.value }))
-                }
-              />
-            </label>
-            <label className="settings-field">
-              Supplier
-              <select
-                required
-                value={form.supplierId}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, supplierId: e.target.value }))
-                }
-              >
-                <option value="">Select supplier</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier._id} value={supplier._id}>
-                    {supplier.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="settings-field">
-              Product
-              <select
-                required
-                value={form.productId}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, productId: e.target.value }))
-                }
-              >
-                <option value="">Select product</option>
-                {products.map((product) => (
-                  <option key={product._id} value={product._id}>
-                    {product.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="settings-field">
-              Quantity
-              <input
-                type="number"
-                min="1"
-                required
-                value={form.quantity}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, quantity: e.target.value }))
-                }
-              />
-            </label>
-            <label className="settings-field">
-              Unit Cost
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                value={form.unitCost}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, unitCost: e.target.value }))
-                }
-              />
-            </label>
-            <label className="settings-field">
-              Status
-              <select
-                value={form.status}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, status: e.target.value }))
-                }
-              >
-                <option value="Pending">Pending</option>
-                <option value="In Transit">In Transit</option>
-                <option value="Received">Received</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-            </label>
-            <label className="settings-field">
-              Expected Date
-              <input
-                type="date"
-                value={form.expectedDate}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, expectedDate: e.target.value }))
-                }
-              />
-            </label>
-            <div style={{ display: "flex", alignItems: "end" }}>
-              <button className="primary-btn" type="submit" disabled={saving}>
-                {saving ? "Saving..." : "Save PO"}
-              </button>
-            </div>
-          </form>
-        </section>
-      ) : null}
+    <WorkspaceLayout>
+      <div className="kpi-cards" style={{ marginBottom: 16 }}>
+        <div className="kpi-card">
+          <div className="kpi-label">Total Orders</div>
+          <div className="kpi-value">{statusCounts.total}</div>
+        </div>
+        <div className="kpi-card kpi-warning">
+          <div className="kpi-label">Pending</div>
+          <div className="kpi-value">{statusCounts.pending}</div>
+        </div>
+        <div className="kpi-card kpi-success">
+          <div className="kpi-label">Received</div>
+          <div className="kpi-value">{statusCounts.received}</div>
+        </div>
+      </div>
 
-      {error ? (
-        <p style={{ color: "#b43f47", fontWeight: 700 }}>{error}</p>
-      ) : null}
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, alignItems: "center" }}>
+        <h4 style={{ margin: 0 }}>Purchase Orders</h4>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button className="subtle-btn" onClick={load}>Refresh</button>
+          <button className="primary-btn" onClick={() => { setForm({ supplier: "", items: [{ product: "", quantity: "", unitCost: "" }], notes: "" }); setShowForm(true); }}>
+            + Create Order
+          </button>
+        </div>
+      </div>
 
-      <section className="purchase-card-grid">
-        <article className="panel-surface purchase-card">
-          <span className="purchase-icon">TS</span>
-          <h3>{moneyFormatter.format(summary.totalSpending || 0)}</h3>
-          <p>Total Spending</p>
-        </article>
-        <article className="panel-surface purchase-card">
-          <span className="purchase-icon">PO</span>
-          <h3>{summary.activePOs || 0}</h3>
-          <p>Active POs</p>
-        </article>
-        <article className="panel-surface purchase-card">
-          <span className="purchase-icon">RC</span>
-          <h3>{summary.receivedCount || 0}</h3>
-          <p>Received POs</p>
-        </article>
-        <article
-          className="panel-surface purchase-card purchase-card-cta"
-          onClick={() => setShowForm(true)}
-        >
-          <span className="purchase-icon">NP</span>
-          <h3>Create</h3>
-          <p>New PO</p>
-        </article>
-      </section>
-
-      <section className="purchase-filter-row panel-surface">
-        <select
-          className="search-input"
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-        >
-          <option value="">Status: All</option>
-          <option value="Pending">Pending</option>
-          <option value="In Transit">In Transit</option>
-          <option value="Received">Received</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
-        <span className="text-chip" aria-label="Date range filter">
-          Last 30 Days
-        </span>
-        <span className="text-chip" aria-label="Sort method">
-          Sort by Date
-        </span>
-      </section>
-
-      <section className="table-shell">
-        <header
-          className="table-head-row"
-          style={{ gridTemplateColumns: "1fr 1.5fr 0.7fr 1fr 1fr 0.7fr" }}
-        >
-          <span>PO #</span>
-          <span>Supplier</span>
-          <span>Items</span>
-          <span>Total</span>
-          <span>Status</span>
-          <span>Date</span>
-        </header>
+      <div className="table-shell">
+        <div className="table-head-row" style={{ gridTemplateColumns: "1fr 2fr 1fr 1fr 1fr 1.5fr" }}>
+          <div>Order ID</div>
+          <div>Supplier</div>
+          <div>Items</div>
+          <div>Total</div>
+          <div>Status</div>
+          <div style={{ textAlign: "right" }}>Actions</div>
+        </div>
         <div className="table-body">
           {loading ? (
-            <div
-              className="table-data-row"
-              style={{ gridTemplateColumns: "1fr 1.5fr 0.7fr 1fr 1fr 0.7fr" }}
-            >
-              <span>Loading purchase orders...</span>
-            </div>
-          ) : filteredOrders.length === 0 ? (
-            <div
-              className="table-data-row"
-              style={{ gridTemplateColumns: "1fr 1.5fr 0.7fr 1fr 1fr 0.7fr" }}
-            >
-              <span>No purchase orders found</span>
+            [1,2,3].map((i) => <div key={i} className="skeleton-row"></div>)
+          ) : purchases.length === 0 ? (
+            <div className="empty-state">
+              <h3>No purchase orders yet</h3>
+              <p>Create a purchase order to restock your inventory.</p>
             </div>
           ) : (
-            filteredOrders.map((po) => (
-              <div
-                key={po._id}
-                className="table-data-row"
-                style={{ gridTemplateColumns: "1fr 1.5fr 0.7fr 1fr 1fr 0.7fr" }}
-              >
-                <span style={{ fontWeight: 700 }}>{po.poNumber}</span>
-                <span>{po.supplier?.name || "-"}</span>
-                <span>
-                  {po.items?.reduce(
-                    (sum, item) => sum + (item.quantity || 0),
-                    0,
-                  ) || 0}
-                </span>
-                <span>{moneyFormatter.format(po.totalAmount || 0)}</span>
-                <span>
-                  <select
-                    className={`status-badge ${po.status === "Received" ? "badge-green" : po.status === "In Transit" ? "badge-blue" : po.status === "Pending" ? "badge-yellow" : "badge-red"}`}
-                    value={po.status}
-                    onChange={(e) => updateStatus(po._id, e.target.value)}
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="In Transit">In Transit</option>
-                    <option value="Received">Received</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
-                </span>
-                <span>{new Date(po.createdAt).toLocaleDateString()}</span>
+            purchases.map((po) => (
+              <div key={po._id} className="table-data-row" style={{ gridTemplateColumns: "1fr 2fr 1fr 1fr 1fr 1.5fr" }}>
+                <div style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{po.poNumber || po._id.slice(-6).toUpperCase()}</div>
+                <div>
+                  <span className="product-name">{po.supplier?.name || "Direct"}</span>
+                  <span style={{ display: "block", fontSize: "0.7rem", color: "#9ca3af" }}>
+                    {new Date(po.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                  </span>
+                </div>
+                <div>{po.items?.length || 0} items</div>
+                <div style={{ fontWeight: 600 }}>{fmt(po.totalCost)}</div>
+                <div>
+                  <span className={`status-pill ${po.status === "Received" ? "status-Received" : po.status === "Cancelled" ? "status-Cancelled" : "status-Pending"}`}>
+                    {po.status}
+                  </span>
+                </div>
+                <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                  {po.status === "Pending" && (
+                    <button
+                      className="primary-btn"
+                      style={{ fontSize: "0.75rem", minHeight: 30, padding: "0 12px" }}
+                      onClick={() => setConfirmReceive(po)}
+                    >
+                      Mark Received
+                    </button>
+                  )}
+                </div>
               </div>
             ))
           )}
         </div>
-      </section>
+      </div>
+
+      {/* Create PO Modal */}
+      {showForm && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowForm(false); }}>
+          <div className="modal-box modal-form-large" style={{ maxWidth: 640 }}>
+            <h3>Create Purchase Order</h3>
+            <form onSubmit={handleCreate}>
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label>Supplier</label>
+                <select value={form.supplier} onChange={(e) => setForm({ ...form, supplier: e.target.value })}>
+                  <option value="">Select supplier</option>
+                  {suppliers.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
+                </select>
+              </div>
+
+              <div style={{ marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <label style={{ fontSize: "0.75rem", fontWeight: 600, color: "#6b7280", textTransform: "uppercase" }}>Order Items</label>
+                <button type="button" className="text-action" onClick={addItem}>+ Add Item</button>
+              </div>
+
+              {form.items.map((item, idx) => (
+                <div key={idx} style={{ display: "grid", gridTemplateColumns: "3fr 1fr 1fr auto", gap: 8, marginBottom: 8 }}>
+                  <select value={item.product} onChange={(e) => updateItem(idx, "product", e.target.value)} required style={{ padding: "8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: "0.85rem" }}>
+                    <option value="">Select product</option>
+                    {products.map((p) => <option key={p._id} value={p._id}>{p.name} (Stock: {p.stock})</option>)}
+                  </select>
+                  <input type="number" min="1" placeholder="Qty" value={item.quantity} onChange={(e) => updateItem(idx, "quantity", e.target.value)} required style={{ padding: "8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: "0.85rem" }} />
+                  <input type="number" min="0" placeholder="Cost ₹" value={item.unitCost} onChange={(e) => updateItem(idx, "unitCost", e.target.value)} style={{ padding: "8px", borderRadius: 6, border: "1px solid #d1d5db", fontSize: "0.85rem" }} />
+                  {form.items.length > 1 && (
+                    <button type="button" onClick={() => removeItem(idx)} style={{ background: "none", border: "none", color: "#dc2626", cursor: "pointer", fontSize: "1.1rem" }}>x</button>
+                  )}
+                </div>
+              ))}
+
+              <div style={{ textAlign: "right", fontSize: "0.85rem", fontWeight: 600, margin: "8px 0 14px", color: "#2c5cc6" }}>
+                Total: {fmt(calcTotal())}
+              </div>
+
+              <div className="form-group" style={{ marginBottom: 14 }}>
+                <label>Notes</label>
+                <textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} rows={2} placeholder="Optional notes..." />
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="modal-btn-cancel" onClick={() => setShowForm(false)}>Cancel</button>
+                <button type="submit" className="modal-btn-confirm" disabled={saving}>{saving ? "Creating..." : "Create Order"}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Receive Confirm */}
+      {confirmReceive && (
+        <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setConfirmReceive(null); }}>
+          <div className="modal-box">
+            <h3>Receive Purchase Order</h3>
+            <p>Mark this order as received? This will automatically increase stock for all items in the order.</p>
+            <div className="modal-actions">
+              <button className="modal-btn-cancel" onClick={() => setConfirmReceive(null)}>Cancel</button>
+              <button className="modal-btn-confirm" onClick={handleReceive}>Confirm Received</button>
+            </div>
+          </div>
+        </div>
+      )}
     </WorkspaceLayout>
   );
 }

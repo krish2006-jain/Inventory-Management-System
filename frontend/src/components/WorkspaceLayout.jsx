@@ -1,8 +1,8 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import logo from "../assets/logo.jpeg";
 
-/* ── Sidebar configs per role ── */
+/* ── Sidebar configs per role (no emojis — professional) ── */
 const ownerSections = [
   {
     title: "Overview",
@@ -15,7 +15,6 @@ const ownerSections = [
     title: "Inventory",
     links: [
       { to: "/products", label: "Products" },
-      { to: "/categories", label: "Categories" },
       { to: "/stock-alerts", label: "Stock Alerts" },
     ],
   },
@@ -42,16 +41,12 @@ const stockmgrSections = [
   },
   {
     title: "Inventory",
-    links: [
-      { to: "/sm/stock-list", label: "Stock List" },
-      { to: "/sm/item-details", label: "Item Details" },
-    ],
+    links: [{ to: "/sm/stock-list", label: "Stock List" }],
   },
   {
     title: "Operations",
     links: [
       { to: "/sm/receive-stock", label: "Receive Stock" },
-      { to: "/sm/dispatch", label: "Dispatch" },
       { to: "/sm/adjust-stock", label: "Adjust Stock" },
     ],
   },
@@ -61,18 +56,62 @@ const stockmgrSections = [
   },
 ];
 
-function WorkspaceLayout({
-  title,
-  dateLabel = "Monday, 18 March 2026",
-  actions,
-  children,
-}) {
+const cashierSections = [
+  {
+    title: "Sales",
+    links: [
+      { to: "/cashier/pos", label: "Point of Sale" },
+      { to: "/cashier/summary", label: "Daily Summary" },
+    ],
+  },
+];
+
+/* ── Page titles mapping ── */
+const pageTitles = {
+  "/dashboard": "Dashboard",
+  "/reports": "Reports",
+  "/products": "Products",
+  "/stock-alerts": "Stock Alerts",
+  "/purchases": "Purchases",
+  "/suppliers": "Suppliers",
+  "/users": "Users",
+  "/settings": "Settings",
+  "/sm/dashboard": "Dashboard",
+  "/sm/stock-list": "Stock List",
+  "/sm/receive-stock": "Receive Stock",
+  "/sm/adjust-stock": "Adjust Stock",
+  "/sm/activity-log": "Activity Log",
+  "/cashier/pos": "Point of Sale",
+  "/cashier/summary": "Daily Summary",
+};
+
+function WorkspaceLayout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const sections = user?.role === "stockmgr" ? stockmgrSections : ownerSections;
-  const displayName = user?.username || "Owner Name";
-  const displayRole = user?.role || "owner";
+  const sections =
+    user?.role === "cashier"
+      ? cashierSections
+      : user?.role === "stockmgr"
+        ? stockmgrSections
+        : ownerSections;
+
+  const displayName = user?.username || "User";
+  const displayRole =
+    user?.role === "owner"
+      ? "Owner"
+      : user?.role === "stockmgr"
+        ? "Stock Manager"
+        : "Cashier";
+
+  const pageTitle = pageTitles[location.pathname] || "Stockly";
+  const today = new Date().toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
 
   const handleLogout = () => {
     logout();
@@ -131,16 +170,15 @@ function WorkspaceLayout({
       <main className="workspace-main">
         <header className="workspace-topbar">
           <div>
-            <h1>{title}</h1>
-            <p>{dateLabel}</p>
+            <h1>{pageTitle}</h1>
+            <p>{today}</p>
           </div>
-          {actions ? <div className="workspace-actions">{actions}</div> : null}
         </header>
 
         {children}
 
         <footer className="workspace-footer">
-          Built for reliable inventory operations. Copyright © 2026 Stockly
+          Built for reliable inventory operations. Copyright &copy; {new Date().getFullYear()} Stockly
         </footer>
       </main>
     </div>

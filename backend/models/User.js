@@ -40,10 +40,18 @@ const userScheme = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["Active", "Pending"],
-        message: "Status must be Active or Pending",
+        values: ["Active", "Suspended", "Pending"],
+        message: "Status must be Active, Suspended or Pending",
       },
       default: "Active",
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true },

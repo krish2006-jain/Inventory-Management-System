@@ -72,31 +72,21 @@ router.get("/", authorize("owner", "stockmgr"), async (req, res) => {
   try {
     const { status } = req.query;
     const filter = {};
-
-    if (status) {
-      filter.status = status;
-    }
+    if (status) filter.status = status;
 
     const purchases = await Purchase.find(filter)
       .populate("supplier", "name category")
       .populate("items.product", "name sku")
       .sort({ createdAt: -1 });
 
-    const summary = purchases.reduce(
-      (acc, po) => {
-        acc.totalSpending += po.totalAmount;
-        if (po.status === "Pending" || po.status === "In Transit") {
-          acc.activePOs += 1;
-        }
-        if (po.status === "Received") {
-          acc.receivedCount += 1;
-        }
-        return acc;
-      },
-      { totalSpending: 0, activePOs: 0, receivedCount: 0 },
-    );
+    // Calculate totalCost virtual for frontend
+    const result = purchases.map((po) => {
+      const obj = po.toObject();
+      obj.totalCost = obj.items.reduce((sum, item) => sum + (item.quantity * item.unitCost), 0);
+      return obj;
+    });
 
-    res.status(200).json({ purchases, summary });
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: "Failed to load purchase orders" });
   }
@@ -104,18 +94,12 @@ router.get("/", authorize("owner", "stockmgr"), async (req, res) => {
 
 router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
   try {
-    const { poNumber, supplierId, items, status, expectedDate } = req.body;
+    const { supplier, items, notes, poNumber, supplierId, status, expectedDate } = req.body;
 
-    if (!poNumber || !supplierId) {
-      return res
-        .status(400)
-        .json({ message: "poNumber and supplierId are required" });
-    }
+    const supplierRef = supplier || supplierId;
 
-    const supplier = await Supplier.findById(supplierId);
-    if (!supplier) {
-      return res.status(400).json({ message: "Supplier not found" });
-    }
+    // Auto-generate PO number if not provided
+    const poNum = poNumber || `PO-${Date.now().toString().slice(-8)}`;
 
     const normalizedItems = normalizeItems(items);
     const itemValidationError = await validateItems(normalizedItems);
@@ -124,18 +108,18 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
     }
 
     const totalAmount = normalizedItems.reduce(
-      (sum, line) => sum + line.quantity * line.unitCost,
-      0,
+      (sum, line) => sum + line.quantity * line.unitCost, 0
     );
 
     const purchase = await Purchase.create({
-      poNumber,
-      supplier: supplier._id,
+      poNumber: poNum,
+      supplier: supplierRef || null,
       items: normalizedItems,
       totalAmount,
       status: status || "Pending",
       expectedDate: expectedDate || null,
       receivedDate: status === "Received" ? new Date() : null,
+      notes: notes || "",
       createdBy: req.user._id,
     });
 
@@ -156,44 +140,61 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
   }
 });
 
-router.patch(
-  "/:id/status",
-  authorize("owner", "stockmgr"),
-  async (req, res) => {
-    try {
-      const { status } = req.body;
+// Mark purchase as received (auto-update stock)
+router.patch("/:id/receive", authorize("owner", "stockmgr"), async (req, res) => {
+  try {
+    const purchase = await Purchase.findById(req.params.id);
+    if (!purchase) return res.status(404).json({ message: "Purchase order not found" });
 
-      if (
-        !["Pending", "In Transit", "Received", "Cancelled"].includes(status)
-      ) {
-        return res.status(400).json({ message: "Invalid purchase status" });
-      }
-
-      const purchase = await Purchase.findById(req.params.id);
-      if (!purchase) {
-        return res.status(404).json({ message: "Purchase order not found" });
-      }
-
-      const wasReceived = purchase.status === "Received";
-      purchase.status = status;
-
-      if (status === "Received" && !wasReceived) {
-        purchase.receivedDate = new Date();
-        await purchase.save();
-        await receivePurchaseItems(purchase, req.user._id);
-      } else {
-        await purchase.save();
-      }
-
-      const populated = await Purchase.findById(purchase._id)
-        .populate("supplier", "name category")
-        .populate("items.product", "name sku");
-
-      res.status(200).json(populated);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to update purchase status" });
+    if (purchase.status === "Received") {
+      return res.status(400).json({ message: "Already received" });
     }
-  },
-);
+
+    purchase.status = "Received";
+    purchase.receivedDate = new Date();
+    await purchase.save();
+
+    await receivePurchaseItems(purchase, req.user._id);
+
+    const populated = await Purchase.findById(purchase._id)
+      .populate("supplier", "name category")
+      .populate("items.product", "name sku");
+
+    res.status(200).json(populated);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to receive purchase order" });
+  }
+});
+
+router.patch("/:id/status", authorize("owner", "stockmgr"), async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (!["Pending", "In Transit", "Received", "Cancelled"].includes(status)) {
+      return res.status(400).json({ message: "Invalid purchase status" });
+    }
+
+    const purchase = await Purchase.findById(req.params.id);
+    if (!purchase) return res.status(404).json({ message: "Purchase order not found" });
+
+    const wasReceived = purchase.status === "Received";
+    purchase.status = status;
+
+    if (status === "Received" && !wasReceived) {
+      purchase.receivedDate = new Date();
+      await purchase.save();
+      await receivePurchaseItems(purchase, req.user._id);
+    } else {
+      await purchase.save();
+    }
+
+    const populated = await Purchase.findById(purchase._id)
+      .populate("supplier", "name category")
+      .populate("items.product", "name sku");
+
+    res.status(200).json(populated);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update purchase status" });
+  }
+});
 
 export default router;

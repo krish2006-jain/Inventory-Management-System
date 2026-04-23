@@ -14,12 +14,22 @@ const getProductStatus = (stock, reorderLevel) => {
   return "In Stock";
 };
 
-const normalizeProduct = (productDoc) => {
-  const product = productDoc.toObject();
-  return {
+// SECURITY: Strip costPrice and profitMargin for non-owner roles
+// This ensures financial data NEVER reaches the client for unauthorized users
+const normalizeProduct = (productDoc, userRole = "owner") => {
+  const product = productDoc.toJSON ? productDoc.toJSON() : productDoc.toObject();
+  const result = {
     ...product,
     status: getProductStatus(product.stock, product.reorderLevel),
   };
+
+  // Only owner can see cost price and profit margin
+  if (userRole !== "owner") {
+    delete result.costPrice;
+    delete result.profitMargin;
+  }
+
+  return result;
 };
 
 const applyStockOperation = async ({
@@ -92,6 +102,37 @@ const applyStockOperation = async ({
 
 router.use(protect);
 
+// Low stock products (for stock alerts page)
+router.get("/low-stock", async (req, res) => {
+  try {
+    const products = await Product.find()
+      .populate("category", "name")
+      .populate("supplier", "name");
+
+    const lowStock = products
+      .map((p) => normalizeProduct(p, req.user.role))
+      .filter((p) => p.stock <= p.reorderLevel);
+
+    res.json(lowStock);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch low stock" });
+  }
+});
+
+// Barcode lookup
+router.get("/barcode/:sku", async (req, res) => {
+  try {
+    const product = await Product.findOne({ sku: req.params.sku.toUpperCase() })
+      .populate("category", "name")
+      .populate("supplier", "name");
+
+    if (!product) return res.status(404).json({ message: "Product not found" });
+    res.json(normalizeProduct(product, req.user.role));
+  } catch (error) {
+    res.status(500).json({ message: "Failed to find product" });
+  }
+});
+
 router.get("/", async (req, res) => {
   try {
     const { search, category, supplier, status } = req.query;
@@ -117,7 +158,7 @@ router.get("/", async (req, res) => {
       .populate("supplier", "name")
       .sort({ updatedAt: -1 });
 
-    let normalized = products.map(normalizeProduct);
+    let normalized = products.map((p) => normalizeProduct(p, req.user.role));
 
     if (status) {
       const statusKey = String(status).toLowerCase();
@@ -142,7 +183,7 @@ router.get("/low-stock", async (req, res) => {
       .populate("supplier", "name")
       .sort({ stock: 1, updatedAt: -1 });
 
-    res.status(200).json(products.map(normalizeProduct));
+    res.status(200).json(products.map((p) => normalizeProduct(p, req.user.role)));
   } catch (error) {
     res.status(500).json({ message: "Failed to load stock alerts" });
   }
@@ -185,7 +226,7 @@ router.get("/:id", async (req, res) => {
       .limit(20);
 
     res.status(200).json({
-      ...normalizeProduct(product),
+      ...normalizeProduct(product, req.user.role),
       movements,
     });
   } catch (error) {
@@ -202,6 +243,7 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
       category,
       supplier,
       unitPrice,
+      costPrice,
       stock,
       reorderLevel,
       unit,
@@ -233,6 +275,7 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
       category,
       supplier: supplier || null,
       unitPrice,
+      costPrice: costPrice || 0,
       stock: stock ?? 0,
       reorderLevel: reorderLevel ?? 10,
       unit,
@@ -244,7 +287,7 @@ router.post("/", authorize("owner", "stockmgr"), async (req, res) => {
       .populate("category", "name")
       .populate("supplier", "name");
 
-    res.status(201).json(normalizeProduct(populated));
+    res.status(201).json(normalizeProduct(populated, req.user.role));
   } catch (error) {
     if (error?.code === 11000) {
       return res.status(400).json({ message: "SKU already exists" });
@@ -263,6 +306,7 @@ router.put("/:id", authorize("owner", "stockmgr"), async (req, res) => {
       "category",
       "supplier",
       "unitPrice",
+      "costPrice",
       "reorderLevel",
       "unit",
       "location",
@@ -299,7 +343,7 @@ router.put("/:id", authorize("owner", "stockmgr"), async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    res.status(200).json(normalizeProduct(product));
+    res.status(200).json(normalizeProduct(product, req.user.role));
   } catch (error) {
     if (error?.code === 11000) {
       return res.status(400).json({ message: "SKU already exists" });

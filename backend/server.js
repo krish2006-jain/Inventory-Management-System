@@ -10,6 +10,9 @@ import productRoutes from "./routes/products.js";
 import purchaseRoutes from "./routes/purchases.js";
 import userRoutes from "./routes/users.js";
 import dashboardRoutes from "./routes/dashboard.js";
+import salesRoutes from "./routes/sales.js";
+import settingsRoutes from "./routes/settings.js";
+import reportsRoutes from "./routes/reports.js";
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
@@ -27,6 +30,9 @@ app.use("/api/products", productRoutes);
 app.use("/api/purchases", purchaseRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/sales", salesRoutes);
+app.use("/api/settings", settingsRoutes);
+app.use("/api/reports", reportsRoutes);
 
 app.get("/api/health", (req, res) => {
   res.status(200).json({ ok: true, message: "Stockly API running" });

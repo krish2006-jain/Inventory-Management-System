@@ -1,141 +1,105 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import WorkspaceLayout from "../components/WorkspaceLayout";
+import { useToast } from "../components/ToastProvider";
 import api from "../services/api";
 
 function StockAlerts() {
+  const toast = useToast();
+  const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const loadAlerts = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
-    setError("");
     try {
       const res = await api.get("/products/low-stock");
       setAlerts(res.data || []);
     } catch {
-      setError("Failed to load stock alerts");
+      toast.error("Failed to load stock alerts");
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
-  useEffect(() => {
-    loadAlerts();
-  }, []);
+  useEffect(() => { load(); }, [load]);
 
-  const actions = (
-    <>
-      <button className="subtle-btn" type="button" onClick={loadAlerts}>
-        Refresh
-      </button>
-      <Link
-        to="/purchases"
-        className="primary-btn"
-        style={{ textDecoration: "none" }}
-      >
-        Create Purchase Order
-      </Link>
-    </>
-  );
+  const fmt = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
 
-  const critical = alerts.filter((a) => (a.stock || 0) === 0);
-  const warning = alerts.filter((a) => (a.stock || 0) > 0);
+  const critical = alerts.filter((p) => p.stock === 0);
+  const warning = alerts.filter((p) => p.stock > 0 && p.stock <= p.reorderLevel);
 
   return (
-    <WorkspaceLayout title="Stock Alerts" actions={actions}>
-      {error ? (
-        <p style={{ color: "#b43f47", fontWeight: 700 }}>{error}</p>
-      ) : null}
-      <section
-        className="metrics-grid"
-        style={{ gridTemplateColumns: "repeat(3, 1fr)" }}
-      >
-        <article className="metric-card">
-          <p>Total Alerts</p>
-          <h3>{alerts.length}</h3>
-          <span className="metric-down">Items below reorder level</span>
-        </article>
-        <article className="metric-card">
-          <p>Critical (0 stock)</p>
-          <h3 style={{ color: "#e53e3e" }}>{critical.length}</h3>
-          <span className="metric-down">Out of stock</span>
-        </article>
-        <article className="metric-card">
-          <p>Warning</p>
-          <h3 style={{ color: "#d69e2e" }}>{warning.length}</h3>
-          <span className="metric-down">Below reorder point</span>
-        </article>
-      </section>
+    <WorkspaceLayout>
+      {/* Summary */}
+      <div className="kpi-cards" style={{ marginBottom: 16 }}>
+        <div className="kpi-card kpi-danger">
+          <div className="kpi-label">Critical (Out of Stock)</div>
+          <div className="kpi-value">{critical.length}</div>
+        </div>
+        <div className="kpi-card kpi-warning">
+          <div className="kpi-label">Warning (Low Stock)</div>
+          <div className="kpi-value">{warning.length}</div>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-label">Total Alerts</div>
+          <div className="kpi-value">{alerts.length}</div>
+        </div>
+      </div>
 
-      <section className="table-shell">
-        <header
-          className="table-head-row"
-          style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}
-        >
-          <span>Product</span>
-          <span>SKU</span>
-          <span>Current</span>
-          <span>Reorder Level</span>
-          <span>Status</span>
-          <span>Action</span>
-        </header>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, alignItems: "center" }}>
+        <h4 style={{ margin: 0 }}>Active Stock Alerts</h4>
+        <button className="subtle-btn" onClick={load}>Refresh</button>
+      </div>
+
+      <div className="table-shell">
+        <div className="table-head-row" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1.5fr" }}>
+          <div>Product</div>
+          <div>SKU</div>
+          <div>Category</div>
+          <div>Current Stock</div>
+          <div>Reorder Level</div>
+          <div>Severity</div>
+          <div style={{ textAlign: "right" }}>Action</div>
+        </div>
         <div className="table-body">
           {loading ? (
-            <div
-              className="table-data-row"
-              style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}
-            >
-              <span>Loading alerts...</span>
-            </div>
+            [1,2,3,4].map((i) => <div key={i} className="skeleton-row"></div>)
           ) : alerts.length === 0 ? (
-            <div
-              className="table-data-row"
-              style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}
-            >
-              <span>No alerts right now</span>
+            <div className="empty-state">
+              <h3>All stock levels are healthy</h3>
+              <p>No products are below their reorder threshold.</p>
             </div>
           ) : (
-            alerts.map((a) => {
-              const isCritical = (a.stock || 0) === 0;
-              return (
-                <div
-                  key={a._id}
-                  className="table-data-row"
-                  style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr" }}
-                >
-                  <span className="product-name">{a.name}</span>
-                  <span>{a.sku}</span>
-                  <span
-                    style={{
-                      fontWeight: 700,
-                      color: isCritical ? "#e53e3e" : "#d69e2e",
-                    }}
-                  >
-                    {a.stock}
-                  </span>
-                  <span>{a.reorderLevel}</span>
-                  <span
-                    className={`status-badge ${isCritical ? "badge-red" : "badge-yellow"}`}
-                  >
-                    {isCritical ? "Critical" : "Warning"}
-                  </span>
-                  <span>
-                    <Link
-                      to="/purchases"
-                      className="text-chip"
-                      style={{ textDecoration: "none" }}
-                    >
-                      Open Purchases
-                    </Link>
+            alerts.map((p) => (
+              <div key={p._id} className="table-data-row" style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 1fr 1.5fr" }}>
+                <div>
+                  <span className="product-name">{p.name}</span>
+                  {p.supplier?.name && <span style={{ display: "block", fontSize: "0.7rem", color: "#9ca3af" }}>{p.supplier.name}</span>}
+                </div>
+                <div style={{ fontFamily: "monospace", fontSize: "0.8rem" }}>{p.sku}</div>
+                <div>{p.category?.name || "—"}</div>
+                <div style={{ fontWeight: 700, color: p.stock === 0 ? "#dc2626" : "#d97706" }}>{p.stock}</div>
+                <div>{p.reorderLevel}</div>
+                <div>
+                  <span className={`status-pill ${p.stock === 0 ? "status-Cancelled" : "status-Pending"}`}>
+                    {p.stock === 0 ? "CRITICAL" : "WARNING"}
                   </span>
                 </div>
-              );
-            })
+                <div style={{ textAlign: "right" }}>
+                  <button
+                    className="primary-btn"
+                    style={{ fontSize: "0.75rem", minHeight: 30, padding: "0 12px" }}
+                    onClick={() => navigate("/purchases", { state: { reorderProduct: p } })}
+                  >
+                    Create PO
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
-      </section>
+      </div>
     </WorkspaceLayout>
   );
 }
