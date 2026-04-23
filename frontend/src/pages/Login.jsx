@@ -17,9 +17,11 @@ const Login = () => {
   const validate = () => {
     const errs = {};
     if (!email.trim()) errs.email = "Email is required";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errs.email = "Enter a valid email address";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      errs.email = "Enter a valid email address";
     if (!password) errs.password = "Password is required";
-    else if (password.length < 4) errs.password = "Password must be at least 4 characters";
+    else if (password.length < 4)
+      errs.password = "Password must be at least 4 characters";
     return errs;
   };
 
@@ -37,7 +39,8 @@ const Login = () => {
       else if (data.role === "stockmgr") navigate("/sm/dashboard");
       else navigate("/dashboard");
     } catch (err) {
-      const msg = err.response?.data?.message || "Login failed. Please try again.";
+      const msg =
+        err.response?.data?.message || "Login failed. Please try again.";
       setErrors({ general: msg });
     } finally {
       setLoading(false);
@@ -50,7 +53,15 @@ const Login = () => {
         <div className="left-bar">
           <div className="login-shell">
             <div className="logo">
-              <Link to="/" style={{display: "flex", alignItems: "center", gap: "12px", textDecoration: "none"}}>
+              <Link
+                to="/"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  textDecoration: "none",
+                }}
+              >
                 <img src={logo} alt="Stockly logo" />
                 <div>
                   <h1 className="title">STOCKLY</h1>
@@ -59,7 +70,6 @@ const Login = () => {
               </Link>
             </div>
 
-            <p className="auth-kicker">Secure Access</p>
             <h2>Welcome back</h2>
             <p className="subtext">
               Sign in to continue managing your inventory.
@@ -68,13 +78,18 @@ const Login = () => {
             <form className="login-form" onSubmit={handleSubmit} noValidate>
               <label htmlFor="login-email">Email address</label>
               <div className="input-wrapper">
-                <span className="input-icon" aria-hidden="true">@</span>
+                <span className="input-icon" aria-hidden="true">
+                  @
+                </span>
                 <input
                   id="login-email"
                   type="email"
                   placeholder="you@company.com"
                   value={email}
-                  onChange={(e) => { setEmail(e.target.value); setErrors((prev) => ({...prev, email: undefined})); }}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setErrors((prev) => ({ ...prev, email: undefined }));
+                  }}
                   autoComplete="email"
                   className={errors.email ? "input-error" : ""}
                   required
@@ -84,13 +99,18 @@ const Login = () => {
 
               <label htmlFor="login-password">Password</label>
               <div className="input-wrapper">
-                <span className="input-icon" aria-hidden="true">*</span>
+                <span className="input-icon" aria-hidden="true">
+                  *
+                </span>
                 <input
                   id="login-password"
                   type={showPw ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => { setPassword(e.target.value); setErrors((prev) => ({...prev, password: undefined})); }}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setErrors((prev) => ({ ...prev, password: undefined }));
+                  }}
                   autoComplete="current-password"
                   className={errors.password ? "input-error" : ""}
                   required
@@ -104,10 +124,16 @@ const Login = () => {
                   {showPw ? "Hide" : "Show"}
                 </button>
               </div>
-              {errors.password && <p className="field-error">{errors.password}</p>}
+              {errors.password && (
+                <p className="field-error">{errors.password}</p>
+              )}
 
               <div className="form-helper-row">
-                <button type="button" className="forgot-link" onClick={() => {}}>
+                <button
+                  type="button"
+                  className="forgot-link"
+                  onClick={() => {}}
+                >
                   Forgot Password?
                 </button>
               </div>
@@ -135,7 +161,13 @@ const Login = () => {
               </button>
 
               <p className="assistive-note">
-                Don&apos;t have an account? <Link to="/register" style={{ color: "var(--ws-accent)", fontWeight: 600 }}>Sign up</Link>
+                Don&apos;t have an account?{" "}
+                <Link
+                  to="/register"
+                  style={{ color: "var(--ws-accent)", fontWeight: 600 }}
+                >
+                  Sign up
+                </Link>
               </p>
             </form>
           </div>

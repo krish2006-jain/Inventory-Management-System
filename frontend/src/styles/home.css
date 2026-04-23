@@ -3,14 +3,18 @@
    Flat, minimal, professional SaaS aesthetic
    ================================================================ */
 
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Sora:wght@600;700&display=swap");
 
 /* ── Base Reset for Home ── */
 .stockly-home {
   min-height: 100vh;
   background: #ffffff;
   color: #1a1a2e;
-  font-family: "Inter", "Manrope", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    "Plus Jakarta Sans",
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   font-weight: 400;
   font-size: 16px;
   line-height: 1.6;
@@ -38,7 +42,7 @@
 .stockly-home h2,
 .stockly-home h3,
 .stockly-home h4 {
-  font-family: "Inter", "Sora", sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
@@ -228,8 +232,15 @@
 }
 
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.3); }
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.3);
+  }
 }
 
 .home-hero h1 {
@@ -256,8 +267,13 @@
 }
 
 @keyframes blink-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 .home-hero p {
@@ -281,12 +297,19 @@
 .home-mockup-wrap {
   max-width: 900px;
   margin: 0 auto;
-  animation: floatMockup 6s ease-in-out infinite, fadeInUp 0.8s ease-out 0.3s both;
+  animation:
+    floatMockup 6s ease-in-out infinite,
+    fadeInUp 0.8s ease-out 0.3s both;
 }
 
 @keyframes floatMockup {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-12px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
 }
 
 .home-mockup {
@@ -311,9 +334,15 @@
   border-radius: 50%;
 }
 
-.home-mockup-dot--red { background: #f87171; }
-.home-mockup-dot--yellow { background: #fbbf24; }
-.home-mockup-dot--green { background: #34d399; }
+.home-mockup-dot--red {
+  background: #f87171;
+}
+.home-mockup-dot--yellow {
+  background: #fbbf24;
+}
+.home-mockup-dot--green {
+  background: #34d399;
+}
 
 .home-kpi-row {
   display: grid;
@@ -331,7 +360,7 @@
 }
 
 .home-kpi-card:hover {
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .home-kpi-label {
@@ -401,8 +430,12 @@
 }
 
 @keyframes growBar {
-  from { transform: scaleY(0); }
-  to { transform: scaleY(1); }
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
 }
 
 .home-donut-wrap {
@@ -433,7 +466,9 @@
 }
 
 @keyframes drawDonut {
-  to { stroke-dasharray: 65 100; }
+  to {
+    stroke-dasharray: 65 100;
+  }
 }
 
 /* ── Stats Bar ── */
@@ -599,7 +634,7 @@
 .stockly-home .home-role-tab--active {
   background-color: #fff;
   color: #6c4ef2;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .home-roles-table {
@@ -660,8 +695,12 @@
   flex-shrink: 0;
 }
 
-.home-perm-dot--green { background: #22c55e; }
-.home-perm-dot--red { background: #ef4444; }
+.home-perm-dot--green {
+  background: #22c55e;
+}
+.home-perm-dot--red {
+  background: #ef4444;
+}
 
 .home-perm-badge {
   display: inline-flex;
@@ -805,19 +844,33 @@
 
 /* ── Animations ── */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeInDown {
-  from { opacity: 0; transform: translateY(-12px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .home-fade-in {
   opacity: 0;
   transform: translateY(16px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transition:
+    opacity 0.6s ease,
+    transform 0.6s ease;
 }
 
 .home-fade-in--visible {
@@ -827,12 +880,30 @@
 
 /* ── Responsive ── */
 @media (max-width: 768px) {
-  .home-nav-links { display: none; }
-  .home-kpi-row { grid-template-columns: repeat(2, 1fr); }
-  .home-charts-row { grid-template-columns: 1fr; }
-  .home-features-grid { grid-template-columns: 1fr; }
-  .home-stats-inner { grid-template-columns: 1fr; }
-  .home-stat:not(:last-child) { border-right: none; border-bottom: 1px solid #e5e7eb; }
-  .home-steps-row { flex-direction: column; gap: 32px; }
-  .home-hero-actions { flex-direction: column; }
+  .home-nav-links {
+    display: none;
+  }
+  .home-kpi-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .home-charts-row {
+    grid-template-columns: 1fr;
+  }
+  .home-features-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-stats-inner {
+    grid-template-columns: 1fr;
+  }
+  .home-stat:not(:last-child) {
+    border-right: none;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .home-steps-row {
+    flex-direction: column;
+    gap: 32px;
+  }
+  .home-hero-actions {
+    flex-direction: column;
+  }
 }

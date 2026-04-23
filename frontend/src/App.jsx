@@ -159,6 +159,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/sm/purchases"
+              element={
+                <ProtectedRoute allowedRoles={["stockmgr"]}>
+                  <Purchases />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Cashier routes */}
             <Route
@@ -178,11 +186,14 @@ function App() {
               }
             />
             {/* Legacy cashier route redirect */}
-            <Route path="/cashier" element={<Navigate to="/cashier/pos" replace />} />
+            <Route
+              path="/cashier"
+              element={<Navigate to="/cashier/pos" replace />}
+            />
 
             {/* Landing Page */}
             <Route path="/go" element={<RedirectByRole />} />
-            
+
             {/* 404 catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>

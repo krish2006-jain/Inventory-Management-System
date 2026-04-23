@@ -27,13 +27,17 @@ function SmDashboard() {
     }
   }, [toast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
   if (loading) {
     return (
       <WorkspaceLayout>
         <div className="skeleton-grid">
-          {[1,2,3,4].map((i) => <div key={i} className="skeleton-card"></div>)}
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="skeleton-card"></div>
+          ))}
         </div>
       </WorkspaceLayout>
     );
@@ -68,17 +72,40 @@ function SmDashboard() {
       <div className="dashboard-grid" style={{ marginTop: 16 }}>
         <div className="panel-surface">
           <h4 className="panel-title">Quick Actions</h4>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 8 }}>
-            <button className="primary-btn" style={{ minHeight: 44 }} onClick={() => navigate("/sm/receive-stock")}>
-              Receive Stock
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 8,
+              marginTop: 8,
+            }}
+          >
+            <button
+              className="primary-btn"
+              style={{ minHeight: 44 }}
+              onClick={() => navigate("/sm/receive-stock")}
+            >
+              Order Stock
             </button>
-            <button className="subtle-btn" style={{ minHeight: 44 }} onClick={() => navigate("/sm/adjust-stock")}>
+            <button
+              className="subtle-btn"
+              style={{ minHeight: 44 }}
+              onClick={() => navigate("/sm/adjust-stock")}
+            >
               Adjust Stock
             </button>
-            <button className="subtle-btn" style={{ minHeight: 44 }} onClick={() => navigate("/sm/stock-list")}>
+            <button
+              className="subtle-btn"
+              style={{ minHeight: 44 }}
+              onClick={() => navigate("/sm/stock-list")}
+            >
               View Inventory
             </button>
-            <button className="subtle-btn" style={{ minHeight: 44 }} onClick={() => navigate("/sm/activity-log")}>
+            <button
+              className="subtle-btn"
+              style={{ minHeight: 44 }}
+              onClick={() => navigate("/sm/activity-log")}
+            >
               Activity Log
             </button>
           </div>
@@ -90,24 +117,75 @@ function SmDashboard() {
           {alerts.length === 0 ? (
             <div className="empty-state-mini">All stock levels healthy</div>
           ) : (
-            <div className="top-products-list" style={{ maxHeight: 300, overflowY: "auto" }}>
+            <div
+              className="top-products-list"
+              style={{ maxHeight: 300, overflowY: "auto" }}
+            >
               {/* Critical first */}
               {criticalAlerts.slice(0, 5).map((p) => (
-                <div key={p._id} className="top-product-row" style={{ borderLeft: "3px solid #dc2626", paddingLeft: 8 }}>
+                <div
+                  key={p._id}
+                  className="top-product-row"
+                  style={{ borderLeft: "3px solid #dc2626", paddingLeft: 8 }}
+                >
                   <div className="top-info">
                     <span className="top-name">{p.name}</span>
-                    <span className="top-meta">Stock: {p.stock} / Reorder: {p.reorderLevel}</span>
+                    <span className="top-meta">
+                      Stock: {p.stock} / Reorder: {p.reorderLevel}
+                    </span>
                   </div>
-                  <span className="status-pill status-Cancelled">CRITICAL</span>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <button
+                      className="subtle-btn"
+                      style={{
+                        fontSize: "0.72rem",
+                        minHeight: 28,
+                        padding: "0 10px",
+                      }}
+                      onClick={() =>
+                        navigate("/sm/receive-stock", { state: { product: p } })
+                      }
+                    >
+                      Order
+                    </button>
+                    <span className="status-pill status-Cancelled">
+                      CRITICAL
+                    </span>
+                  </div>
                 </div>
               ))}
               {warningAlerts.slice(0, 5).map((p) => (
-                <div key={p._id} className="top-product-row" style={{ borderLeft: "3px solid #f59e0b", paddingLeft: 8 }}>
+                <div
+                  key={p._id}
+                  className="top-product-row"
+                  style={{ borderLeft: "3px solid #f59e0b", paddingLeft: 8 }}
+                >
                   <div className="top-info">
                     <span className="top-name">{p.name}</span>
-                    <span className="top-meta">Stock: {p.stock} / Reorder: {p.reorderLevel}</span>
+                    <span className="top-meta">
+                      Stock: {p.stock} / Reorder: {p.reorderLevel}
+                    </span>
                   </div>
-                  <span className="status-pill status-Pending">LOW</span>
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <button
+                      className="subtle-btn"
+                      style={{
+                        fontSize: "0.72rem",
+                        minHeight: 28,
+                        padding: "0 10px",
+                      }}
+                      onClick={() =>
+                        navigate("/sm/receive-stock", { state: { product: p } })
+                      }
+                    >
+                      Order
+                    </button>
+                    <span className="status-pill status-Pending">LOW</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -125,11 +203,20 @@ function SmDashboard() {
             {data.recentActivity.slice(0, 8).map((act, i) => (
               <div key={i} className="top-product-row">
                 <div className="top-info">
-                  <span className="top-name">{act.productName || act.product?.name || "Product"}</span>
-                  <span className="top-meta">{act.type} | {act.quantity} units | {act.reason}</span>
+                  <span className="top-name">
+                    {act.productName || act.product?.name || "Product"}
+                  </span>
+                  <span className="top-meta">
+                    {act.type} | {act.quantity} units | {act.reason}
+                  </span>
                 </div>
                 <span style={{ fontSize: "0.72rem", color: "#94a3b8" }}>
-                  {new Date(act.createdAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                  {new Date(act.createdAt).toLocaleString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                 </span>
               </div>
             ))}

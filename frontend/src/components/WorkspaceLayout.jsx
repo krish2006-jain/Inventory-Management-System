@@ -46,13 +46,16 @@ const stockmgrSections = [
   {
     title: "Operations",
     links: [
-      { to: "/sm/receive-stock", label: "Receive Stock" },
+      { to: "/sm/receive-stock", label: "Order Stock" },
       { to: "/sm/adjust-stock", label: "Adjust Stock" },
     ],
   },
   {
     title: "Logs",
-    links: [{ to: "/sm/activity-log", label: "Activity Log" }],
+    links: [
+      { to: "/sm/activity-log", label: "Activity Log" },
+      { to: "/sm/purchases", label: "Purchase Orders" },
+    ],
   },
 ];
 
@@ -78,9 +81,10 @@ const pageTitles = {
   "/settings": "Settings",
   "/sm/dashboard": "Dashboard",
   "/sm/stock-list": "Stock List",
-  "/sm/receive-stock": "Receive Stock",
+  "/sm/receive-stock": "Order Stock",
   "/sm/adjust-stock": "Adjust Stock",
   "/sm/activity-log": "Activity Log",
+  "/sm/purchases": "Purchase Orders",
   "/cashier/pos": "Point of Sale",
   "/cashier/summary": "Daily Summary",
 };
@@ -178,7 +182,8 @@ function WorkspaceLayout({ children }) {
         {children}
 
         <footer className="workspace-footer">
-          Built for reliable inventory operations. Copyright &copy; {new Date().getFullYear()} Stockly
+          Built for reliable inventory operations. Copyright &copy;{" "}
+          {new Date().getFullYear()} Stockly
         </footer>
       </main>
     </div>

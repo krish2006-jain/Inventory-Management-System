@@ -97,7 +97,7 @@ html {
 .workspace-brand h2 {
   margin: 0;
   font-size: 1.5rem;
-  font-family: Sora, Manrope, sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
 }
 
 .workspace-brand p {
@@ -220,7 +220,7 @@ html {
   top: 0;
   z-index: 5;
   background: var(--ws-panel);
-  margin: -22px -22px 0;
+  margin: -22px -22px 20px;
   padding: 22px;
   border-radius: var(--ws-radius) var(--ws-radius) 0 0;
 }
@@ -228,7 +228,7 @@ html {
 .workspace-topbar h1 {
   margin: 0;
   font-size: clamp(1.45rem, 2.5vw, 1.95rem);
-  font-family: Sora, Manrope, sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
 }
 
 .workspace-topbar p {
@@ -396,7 +396,7 @@ span.text-chip {
 .metric-card h3 {
   margin: 8px 0 8px;
   font-size: 1.6rem;
-  font-family: Sora, Manrope, sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
 }
 
 .metric-card span {
@@ -819,7 +819,7 @@ select.status-badge {
 .report-kpi-card h3 {
   margin: 0;
   font-size: 1.4rem;
-  font-family: Sora, sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
 }
 .report-kpi-card p {
   margin: 0;
@@ -967,7 +967,7 @@ select.status-badge {
 .purchase-card h3 {
   margin: 0;
   font-size: 1.3rem;
-  font-family: Sora, sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
 }
 .purchase-card p {
   margin: 0;
@@ -1111,7 +1111,7 @@ select.status-badge {
 .user-stat-card h3 {
   margin: 8px 0 0;
   font-size: 1.5rem;
-  font-family: Sora, sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
 }
 
 .user-content-grid {
@@ -1326,7 +1326,7 @@ select.status-badge {
   margin: 0;
   font-size: 1.3rem;
   color: var(--ws-accent);
-  font-family: Sora, sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
 }
 .snapshot-item p {
   margin: 4px 0 0;
@@ -1979,21 +1979,43 @@ select.status-badge {
   color: #374151;
 }
 
-.toast-success { border-left-color: #10b981; }
-.toast-success .toast-icon { color: #10b981; }
+.toast-success {
+  border-left-color: #10b981;
+}
+.toast-success .toast-icon {
+  color: #10b981;
+}
 
-.toast-error { border-left-color: #ef4444; }
-.toast-error .toast-icon { color: #ef4444; }
+.toast-error {
+  border-left-color: #ef4444;
+}
+.toast-error .toast-icon {
+  color: #ef4444;
+}
 
-.toast-warning { border-left-color: #f59e0b; }
-.toast-warning .toast-icon { color: #f59e0b; }
+.toast-warning {
+  border-left-color: #f59e0b;
+}
+.toast-warning .toast-icon {
+  color: #f59e0b;
+}
 
-.toast-info { border-left-color: #3b82f6; }
-.toast-info .toast-icon { color: #3b82f6; }
+.toast-info {
+  border-left-color: #3b82f6;
+}
+.toast-info .toast-icon {
+  color: #3b82f6;
+}
 
 @keyframes toastSlideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 /* ══════════════════════════════════════════════════════ */
@@ -2025,8 +2047,12 @@ select.status-badge {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ══════════════════════════════════════════════════════ */
@@ -2092,14 +2118,16 @@ select.status-badge {
 .btn-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ══════════════════════════════════════════════════════ */
@@ -2242,13 +2270,23 @@ select.status-badge {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes modalScale {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 /* ══════════════════════════════════════════════════════ */
@@ -2374,7 +2412,9 @@ select.status-badge {
   border: 1px solid var(--ws-surface-border);
   border-radius: var(--ws-radius-md);
   padding: 18px 16px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .kpi-card:hover {
@@ -2394,14 +2434,22 @@ select.status-badge {
 .kpi-value {
   font-size: 1.5rem;
   font-weight: 700;
-  font-family: Sora, Manrope, sans-serif;
+  font-family: Sora, "Plus Jakarta Sans", sans-serif;
   color: var(--ws-text);
 }
 
-.kpi-warning .kpi-value { color: #d97706; }
-.kpi-danger .kpi-value { color: #dc2626; }
-.kpi-accent .kpi-value { color: #2c5cc6; }
-.kpi-success .kpi-value { color: #059669; }
+.kpi-warning .kpi-value {
+  color: #d97706;
+}
+.kpi-danger .kpi-value {
+  color: #dc2626;
+}
+.kpi-accent .kpi-value {
+  color: #2c5cc6;
+}
+.kpi-success .kpi-value {
+  color: #059669;
+}
 
 .dashboard-grid {
   display: grid;

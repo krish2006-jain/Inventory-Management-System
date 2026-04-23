@@ -52,6 +52,11 @@ const purchaseSchema = new mongoose.Schema(
       min: 0,
       required: true,
     },
+    notes: {
+      type: String,
+      trim: true,
+      default: "",
+    },
     expectedDate: {
       type: Date,
       default: null,
