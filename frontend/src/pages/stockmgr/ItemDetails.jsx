@@ -50,9 +50,7 @@ function ItemDetails() {
       <button className="subtle-btn" type="button" onClick={loadProduct}>
         Refresh
       </button>
-      <button className="primary-btn" type="button">
-        Live Product Details
-      </button>
+      <span className="text-chip">Product insights</span>
     </>
   );
 
@@ -61,7 +59,7 @@ function ItemDetails() {
       title={
         <>
           <Link to="/sm/stock-list" className="back-link">
-            ← Back to Stock List
+            Back to Stock List
           </Link>
         </>
       }
@@ -104,7 +102,7 @@ function ItemDetails() {
                   alignItems: "center",
                 }}
               >
-                📥 Receive
+                Receive
               </Link>
               <Link
                 to={`/sm/dispatch?product=${product._id}`}
@@ -115,7 +113,7 @@ function ItemDetails() {
                   alignItems: "center",
                 }}
               >
-                📤 Dispatch
+                Dispatch
               </Link>
               <Link
                 to={`/sm/adjust-stock?product=${product._id}`}
@@ -126,7 +124,7 @@ function ItemDetails() {
                   alignItems: "center",
                 }}
               >
-                📝 Log adjustment
+                Log adjustment
               </Link>
             </div>
           </section>

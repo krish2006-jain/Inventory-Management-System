@@ -48,9 +48,7 @@ function ActivityLog() {
       <button className="subtle-btn" type="button" onClick={loadLogs}>
         Refresh
       </button>
-      <button className="primary-btn" type="button">
-        Live Activity
-      </button>
+      <span className="text-chip">Audit timeline</span>
     </>
   );
 
@@ -65,12 +63,12 @@ function ActivityLog() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="chip-btn" type="button">
+        <span className="text-chip" aria-label="Total records">
           Total: {logs.length}
-        </button>
-        <button className="chip-btn" type="button">
+        </span>
+        <span className="text-chip" aria-label="Filtered records">
           Filtered: {filteredLogs.length}
-        </button>
+        </span>
       </section>
 
       {error ? (
@@ -167,9 +165,7 @@ function ActivityLog() {
           style={{ gridTemplateColumns: "1fr 1fr" }}
         >
           <span>Showing {filteredLogs.length} records</span>
-          <span className="pagination">
-            <button type="button">1</button>
-          </span>
+          <span className="pagination">Page 1</span>
         </footer>
       </section>
     </WorkspaceLayout>

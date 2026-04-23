@@ -216,7 +216,7 @@ function Users() {
         <article className="panel-surface user-table-panel">
           <header className="panel-head">
             <h4>Team Members</h4>
-            <button type="button">Total {filteredUsers.length}</button>
+            <span className="text-chip">Total {filteredUsers.length}</span>
           </header>
           <div className="user-table">
             <div className="user-row user-head-row">

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import WorkspaceLayout from "../components/WorkspaceLayout";
 import { useAuth } from "../context/AuthContext";
 import api from "../services/api";
@@ -21,48 +21,57 @@ function Suppliers() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
   const canManage = user?.role === "owner";
 
-  const loadSuppliers = async () => {
+  const loadSuppliers = useCallback(async (keyword = "") => {
     setLoading(true);
     setError("");
     try {
-      const res = await api.get("/suppliers");
+      const params = keyword.trim() ? { search: keyword.trim() } : {};
+      const res = await api.get("/suppliers", { params });
       setSuppliers(res.data || []);
     } catch {
       setError("Failed to load suppliers");
     } finally {
       setLoading(false);
     }
-  };
-
-  useEffect(() => {
-    loadSuppliers();
   }, []);
 
-  const filteredSuppliers = useMemo(() => {
-    if (!search.trim()) return suppliers;
-    const key = search.toLowerCase();
-    return suppliers.filter((supplier) =>
-      [supplier.name, supplier.category, supplier.email]
-        .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(key)),
-    );
-  }, [suppliers, search]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      loadSuppliers(search);
+    }, 220);
 
-  const topSellers = useMemo(
-    () =>
-      [...suppliers]
-        .sort((a, b) => (b.productCount || 0) - (a.productCount || 0))
-        .slice(0, 3),
-    [suppliers],
-  );
+    return () => clearTimeout(timer);
+  }, [search, loadSuppliers]);
+
+  const supplierMetrics = useMemo(() => {
+    const categories = new Set();
+    let totalRating = 0;
+    let totalProducts = 0;
+
+    suppliers.forEach((supplier) => {
+      categories.add(supplier.category || "General");
+      totalRating += Number(supplier.rating || 0);
+      totalProducts += Number(supplier.productCount || 0);
+    });
+
+    return {
+      categoryCount: categories.size,
+      averageRating: suppliers.length
+        ? (totalRating / suppliers.length).toFixed(1)
+        : "0.0",
+      totalProducts,
+    };
+  }, [suppliers]);
 
   const handleCreate = async (event) => {
     event.preventDefault();
     setSaving(true);
     setError("");
+    setSuccess("");
     try {
       await api.post("/suppliers", {
         ...form,
@@ -70,7 +79,8 @@ function Suppliers() {
       });
       setForm(supplierFormState);
       setShowForm(false);
-      await loadSuppliers();
+      setSuccess("Supplier created successfully");
+      await loadSuppliers(search);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create supplier");
     } finally {
@@ -80,16 +90,13 @@ function Suppliers() {
 
   const actions = (
     <>
-      <button className="subtle-btn" type="button" onClick={loadSuppliers}>
-        Refresh
-      </button>
       {canManage ? (
         <button
           className="primary-btn"
           type="button"
           onClick={() => setShowForm((prev) => !prev)}
         >
-          {showForm ? "Close" : "Add Supplier"}
+          {showForm ? "Close Form" : "Add Supplier"}
         </button>
       ) : null}
     </>
@@ -179,67 +186,69 @@ function Suppliers() {
           className="search-input"
           type="search"
           value={search}
-          placeholder="Search suppliers"
+          placeholder="Search by supplier, category, or email"
+          aria-label="Search suppliers"
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="chip-btn" type="button">
-          Total: {suppliers.length}
-        </button>
-        <button className="chip-btn right" type="button">
-          Top 3 highlighted below
-        </button>
+        <div className="supplier-metrics">
+          <span className="supplier-pill">{suppliers.length} suppliers</span>
+          <span className="supplier-pill">
+            {supplierMetrics.categoryCount} categories
+          </span>
+          <span className="supplier-pill">
+            Avg rating {supplierMetrics.averageRating}
+          </span>
+          <span className="supplier-pill">
+            {supplierMetrics.totalProducts} linked products
+          </span>
+        </div>
       </section>
 
       {error ? (
         <p style={{ color: "#b43f47", fontWeight: 700 }}>{error}</p>
       ) : null}
+      {success ? <p className="supplier-success">{success}</p> : null}
 
       <section className="supplier-grid">
         {loading ? (
           <article className="panel-surface supplier-tile">
             <h4>Loading suppliers...</h4>
           </article>
-        ) : filteredSuppliers.length === 0 ? (
+        ) : suppliers.length === 0 ? (
           <article className="panel-surface supplier-tile">
             <h4>No suppliers found</h4>
+            <p className="supplier-meta">
+              Try a different search term or create a new supplier.
+            </p>
           </article>
         ) : (
-          filteredSuppliers.map((supplier) => (
+          suppliers.map((supplier) => (
             <article key={supplier._id} className="panel-surface supplier-tile">
-              <div className="supplier-avatar">
-                {supplier.name?.[0]?.toUpperCase() || "S"}
+              <div className="supplier-tile-head">
+                <div className="supplier-avatar">
+                  {supplier.name?.[0]?.toUpperCase() || "S"}
+                </div>
+                <div>
+                  <h4>{supplier.name}</h4>
+                  <p className="supplier-cat">
+                    {supplier.category || "General"}
+                  </p>
+                </div>
               </div>
-              <h4>{supplier.name}</h4>
-              <p className="supplier-cat">{supplier.category || "General"}</p>
+              <p className="supplier-contact">
+                {supplier.email || "No email on file"}
+                {supplier.phone ? ` | ${supplier.phone}` : ""}
+              </p>
+              <p className="supplier-address">
+                {supplier.address || "Address not provided"}
+              </p>
               <p className="supplier-meta">
-                {supplier.productCount || 0} products &nbsp;{" "}
-                {Number(supplier.rating || 0).toFixed(1)}★
+                {supplier.productCount || 0} linked products | Rating{" "}
+                {Number(supplier.rating || 0).toFixed(1)}
               </p>
             </article>
           ))
         )}
-
-        {canManage ? (
-          <article
-            className="panel-surface supplier-tile create"
-            onClick={() => setShowForm(true)}
-          >
-            <span className="add-icon">+</span>
-            <h4>Create a Supplier</h4>
-          </article>
-        ) : null}
-      </section>
-
-      <section className="panel-surface supplier-highlight">
-        <h3>Top best seller of this month</h3>
-        <div className="top-seller-cards">
-          {topSellers.map((supplier) => (
-            <div className="top-seller-card" key={supplier._id}>
-              <strong>{supplier.name}</strong>
-              <span>{supplier.productCount || 0} linked products</span>
-            </div>
-          ))}
-        </div>
       </section>
     </WorkspaceLayout>
   );

@@ -157,9 +157,7 @@ function StockList() {
 
         <footer className="table-footer">
           <span>Showing {products.length} products</span>
-          <span className="pagination">
-            <button type="button">1</button>
-          </span>
+          <span className="pagination">Page 1</span>
         </footer>
       </section>
     </WorkspaceLayout>

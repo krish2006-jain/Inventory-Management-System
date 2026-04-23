@@ -7,7 +7,7 @@ const newCategoryState = {
   name: "",
   description: "",
   color: "#6c4ef2",
-  icon: "📦",
+  icon: "CT",
 };
 
 function Categories() {
@@ -82,7 +82,7 @@ function Categories() {
           type="button"
           onClick={() => setShowForm((prev) => !prev)}
         >
-          {showForm ? "Close" : "+ Add Category"}
+          {showForm ? "Close" : "Add Category"}
         </button>
       ) : null}
     </>
@@ -109,12 +109,16 @@ function Categories() {
               />
             </label>
             <label className="settings-field">
-              Icon
+              Code
               <input
                 value={form.icon}
                 onChange={(e) =>
-                  setForm((prev) => ({ ...prev, icon: e.target.value }))
+                  setForm((prev) => ({
+                    ...prev,
+                    icon: e.target.value.toUpperCase().slice(0, 3),
+                  }))
                 }
+                placeholder="CT"
               />
             </label>
             <label className="settings-field">
@@ -154,12 +158,12 @@ function Categories() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button className="chip-btn" type="button">
+        <span className="text-chip" aria-label="Category count">
           Count: {categories.length}
-        </button>
-        <button className="chip-btn" type="button">
+        </span>
+        <span className="text-chip" aria-label="Linked products message">
           Linked to Products
-        </button>
+        </span>
       </section>
 
       {error ? (
@@ -182,7 +186,7 @@ function Categories() {
                 className="category-icon"
                 style={{ background: cat.color || "#6c4ef2" }}
               >
-                {cat.icon || "📦"}
+                {(cat.name || cat.icon || "CA").slice(0, 2).toUpperCase()}
               </div>
               <h4>{cat.name}</h4>
               <p>{cat.productCount || 0} products</p>

@@ -164,6 +164,14 @@ body {
   color: #a89fd8;
   font-size: 14px;
   cursor: pointer;
+  border: none;
+  background: transparent;
+  padding: 0;
+  line-height: 1;
+}
+
+.input-wrapper .eye-icon:hover {
+  color: #6c4ef2;
 }
 
 .input-wrapper input,

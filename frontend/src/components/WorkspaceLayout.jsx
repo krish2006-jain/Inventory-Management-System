@@ -7,30 +7,30 @@ const ownerSections = [
   {
     title: "Overview",
     links: [
-      { to: "/dashboard", label: "📊 Dashboard" },
-      { to: "/reports", label: "📈 Reports" },
+      { to: "/dashboard", label: "Dashboard" },
+      { to: "/reports", label: "Reports" },
     ],
   },
   {
     title: "Inventory",
     links: [
-      { to: "/products", label: "📦 Products" },
-      { to: "/categories", label: "🏷️ Categories" },
-      { to: "/stock-alerts", label: "🔔 Stock Alerts" },
+      { to: "/products", label: "Products" },
+      { to: "/categories", label: "Categories" },
+      { to: "/stock-alerts", label: "Stock Alerts" },
     ],
   },
   {
     title: "Transactions",
     links: [
-      { to: "/purchases", label: "🛒 Purchases" },
-      { to: "/suppliers", label: "🚚 Suppliers" },
+      { to: "/purchases", label: "Purchases" },
+      { to: "/suppliers", label: "Suppliers" },
     ],
   },
   {
     title: "Admin",
     links: [
-      { to: "/users", label: "👥 Users" },
-      { to: "/settings", label: "⚙️ Settings" },
+      { to: "/users", label: "Users" },
+      { to: "/settings", label: "Settings" },
     ],
   },
 ];
@@ -38,30 +38,35 @@ const ownerSections = [
 const stockmgrSections = [
   {
     title: "Overview",
-    links: [{ to: "/sm/dashboard", label: "📊 Dashboard" }],
+    links: [{ to: "/sm/dashboard", label: "Dashboard" }],
   },
   {
     title: "Inventory",
     links: [
-      { to: "/sm/stock-list", label: "📋 Stock List" },
-      { to: "/sm/item-details", label: "🔍 Item Details" },
+      { to: "/sm/stock-list", label: "Stock List" },
+      { to: "/sm/item-details", label: "Item Details" },
     ],
   },
   {
     title: "Operations",
     links: [
-      { to: "/sm/receive-stock", label: "📥 Receive Stock" },
-      { to: "/sm/dispatch", label: "📤 Dispatch" },
-      { to: "/sm/adjust-stock", label: "🔧 Adjust Stock" },
+      { to: "/sm/receive-stock", label: "Receive Stock" },
+      { to: "/sm/dispatch", label: "Dispatch" },
+      { to: "/sm/adjust-stock", label: "Adjust Stock" },
     ],
   },
   {
     title: "Logs",
-    links: [{ to: "/sm/activity-log", label: "📝 Activity Log" }],
+    links: [{ to: "/sm/activity-log", label: "Activity Log" }],
   },
 ];
 
-function WorkspaceLayout({ title, dateLabel = "Monday, 18 March 2026", actions, children }) {
+function WorkspaceLayout({
+  title,
+  dateLabel = "Monday, 18 March 2026",
+  actions,
+  children,
+}) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -118,7 +123,7 @@ function WorkspaceLayout({ title, dateLabel = "Monday, 18 March 2026", actions, 
             <span>{displayRole}</span>
           </div>
           <button className="logout-btn" onClick={handleLogout} title="Logout">
-            🚪
+            Log out
           </button>
         </div>
       </aside>
@@ -135,7 +140,7 @@ function WorkspaceLayout({ title, dateLabel = "Monday, 18 March 2026", actions, 
         {children}
 
         <footer className="workspace-footer">
-          Made With ❤️ &nbsp; Copyright © By Stockly 26
+          Built for reliable inventory operations. Copyright © 2026 Stockly
         </footer>
       </main>
     </div>

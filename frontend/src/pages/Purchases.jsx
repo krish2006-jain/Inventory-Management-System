@@ -278,17 +278,17 @@ function Purchases() {
 
       <section className="purchase-card-grid">
         <article className="panel-surface purchase-card">
-          <span className="purchase-icon">💰</span>
+          <span className="purchase-icon">TS</span>
           <h3>{moneyFormatter.format(summary.totalSpending || 0)}</h3>
           <p>Total Spending</p>
         </article>
         <article className="panel-surface purchase-card">
-          <span className="purchase-icon">📋</span>
+          <span className="purchase-icon">PO</span>
           <h3>{summary.activePOs || 0}</h3>
           <p>Active POs</p>
         </article>
         <article className="panel-surface purchase-card">
-          <span className="purchase-icon">📥</span>
+          <span className="purchase-icon">RC</span>
           <h3>{summary.receivedCount || 0}</h3>
           <p>Received POs</p>
         </article>
@@ -296,7 +296,7 @@ function Purchases() {
           className="panel-surface purchase-card purchase-card-cta"
           onClick={() => setShowForm(true)}
         >
-          <span className="purchase-icon">➕</span>
+          <span className="purchase-icon">NP</span>
           <h3>Create</h3>
           <p>New PO</p>
         </article>
@@ -314,12 +314,12 @@ function Purchases() {
           <option value="Received">Received</option>
           <option value="Cancelled">Cancelled</option>
         </select>
-        <button className="text-chip" type="button">
+        <span className="text-chip" aria-label="Date range filter">
           Last 30 Days
-        </button>
-        <button className="text-chip" type="button">
+        </span>
+        <span className="text-chip" aria-label="Sort method">
           Sort by Date
-        </button>
+        </span>
       </section>
 
       <section className="table-shell">

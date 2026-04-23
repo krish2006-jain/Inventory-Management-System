@@ -7,23 +7,82 @@ const router = express.Router();
 
 router.use(protect);
 
+const escapeRegex = (value = "") =>
+  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normalizeSupplierInput = (payload = {}) => {
+  const normalized = {};
+
+  if (payload.name !== undefined) {
+    normalized.name = String(payload.name || "").trim();
+  }
+  if (payload.email !== undefined) {
+    const email = String(payload.email || "")
+      .trim()
+      .toLowerCase();
+    normalized.email = email || null;
+  }
+  if (payload.phone !== undefined) {
+    const phone = String(payload.phone || "").trim();
+    normalized.phone = phone || null;
+  }
+  if (payload.category !== undefined) {
+    const category = String(payload.category || "").trim();
+    normalized.category = category || "General";
+  }
+  if (payload.address !== undefined) {
+    normalized.address = String(payload.address || "").trim();
+  }
+  if (payload.rating !== undefined) {
+    normalized.rating = Number(payload.rating);
+  }
+
+  return normalized;
+};
+
 router.get("/", async (req, res) => {
   try {
-    const suppliers = await Supplier.find().sort({ createdAt: -1 });
+    const search = String(req.query.search || "").trim();
+    const searchRegex = search ? new RegExp(escapeRegex(search), "i") : null;
 
-    const enriched = await Promise.all(
-      suppliers.map(async (supplier) => {
-        const productCount = await Product.countDocuments({
-          supplier: supplier._id,
-        });
-        return {
-          ...supplier.toObject(),
-          productCount,
-        };
-      }),
+    const pipeline = [];
+    if (searchRegex) {
+      pipeline.push({
+        $match: {
+          $or: [
+            { name: searchRegex },
+            { category: searchRegex },
+            { email: searchRegex },
+          ],
+        },
+      });
+    }
+
+    pipeline.push(
+      {
+        $lookup: {
+          from: "products",
+          let: { supplierId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$supplier", "$$supplierId"] } } },
+            { $count: "count" },
+          ],
+          as: "productStats",
+        },
+      },
+      {
+        $addFields: {
+          productCount: {
+            $ifNull: [{ $arrayElemAt: ["$productStats.count", 0] }, 0],
+          },
+        },
+      },
+      { $project: { productStats: 0 } },
+      { $sort: { createdAt: -1 } },
     );
 
-    res.status(200).json(enriched);
+    const suppliers = await Supplier.aggregate(pipeline);
+    res.status(200).json(suppliers);
   } catch (error) {
     res.status(500).json({ message: "Failed to load suppliers" });
   }
@@ -31,19 +90,14 @@ router.get("/", async (req, res) => {
 
 router.post("/", authorize("owner"), async (req, res) => {
   try {
-    const { name, email, phone, category, address, rating } = req.body;
+    const normalized = normalizeSupplierInput(req.body);
 
-    if (!name) {
+    if (!normalized.name) {
       return res.status(400).json({ message: "Supplier name is required" });
     }
 
     const supplier = await Supplier.create({
-      name: name.trim(),
-      email,
-      phone,
-      category,
-      address,
-      rating,
+      ...normalized,
       createdBy: req.user._id,
     });
 
@@ -58,21 +112,11 @@ router.post("/", authorize("owner"), async (req, res) => {
 
 router.put("/:id", authorize("owner"), async (req, res) => {
   try {
-    const updates = {};
-    const allowedKeys = [
-      "name",
-      "email",
-      "phone",
-      "category",
-      "address",
-      "rating",
-    ];
+    const updates = normalizeSupplierInput(req.body);
 
-    allowedKeys.forEach((key) => {
-      if (req.body[key] !== undefined) {
-        updates[key] = req.body[key];
-      }
-    });
+    if (updates.name !== undefined && !updates.name) {
+      return res.status(400).json({ message: "Supplier name is required" });
+    }
 
     const supplier = await Supplier.findByIdAndUpdate(req.params.id, updates, {
       new: true,

@@ -4,10 +4,10 @@ import WorkspaceLayout from "../../components/WorkspaceLayout";
 import api from "../../services/api";
 
 const reasons = [
-  { id: "damaged", label: "Damaged", icon: "🔧" },
-  { id: "lost", label: "Lost/Missing", icon: "❓" },
-  { id: "return", label: "Customer return", icon: "🔄" },
-  { id: "count", label: "Count Correction", icon: "📋" },
+  { id: "damaged", label: "Damaged", icon: "DMG" },
+  { id: "lost", label: "Lost/Missing", icon: "LST" },
+  { id: "return", label: "Customer return", icon: "RET" },
+  { id: "count", label: "Count correction", icon: "CNT" },
 ];
 
 function AdjustStock() {
@@ -202,9 +202,7 @@ function AdjustStock() {
           onChange={(e) => setNote(e.target.value)}
         />
         <div style={{ marginTop: 10 }}>
-          <button className="subtle-btn" type="button">
-            📎 Attach Photo
-          </button>
+          <span className="text-chip">Photo upload coming soon</span>
         </div>
       </section>
 

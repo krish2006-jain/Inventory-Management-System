@@ -39,9 +39,7 @@ function Dashboard() {
       <button className="subtle-btn" type="button" onClick={loadSummary}>
         Refresh
       </button>
-      <button className="primary-btn" type="button">
-        Live Dashboard
-      </button>
+      <span className="text-chip">Real-time metrics</span>
     </>
   );
 
@@ -52,22 +50,22 @@ function Dashboard() {
       ) : null}
       <section className="metrics-grid">
         <article className="metric-card">
-          <p>Total Products 📦</p>
+          <p>Total Products</p>
           <h3>{loading ? "..." : metrics.totalProducts || 0}</h3>
           <span className="metric-up">Tracked in database</span>
         </article>
         <article className="metric-card">
-          <p>Total Categories 🏷️</p>
+          <p>Total Categories</p>
           <h3>{loading ? "..." : metrics.totalCategories || 0}</h3>
           <span className="metric-up">Catalog segments</span>
         </article>
         <article className="metric-card">
-          <p>Low Stock Items ⚠️</p>
+          <p>Low Stock Items</p>
           <h3>{loading ? "..." : metrics.lowStockCount || 0}</h3>
           <span className="metric-down">Below reorder point</span>
         </article>
         <article className="metric-card">
-          <p>Out Of Stock ❌</p>
+          <p>Out Of Stock</p>
           <h3>{loading ? "..." : metrics.outOfStockCount || 0}</h3>
           <span className="metric-down">Immediate attention</span>
         </article>
@@ -77,7 +75,7 @@ function Dashboard() {
         <article className="panel chart-panel">
           <div className="panel-head">
             <h4>Weekly Sales</h4>
-            <button type="button">Inventory Health</button>
+            <span className="text-chip">Inventory Health</span>
           </div>
           <div className="bars-wrap" aria-label="Weekly sales chart">
             <div className="bar-col">
@@ -164,7 +162,7 @@ function Dashboard() {
 
         <article className="panel">
           <div className="panel-head">
-            <h4>Recents Transaction</h4>
+            <h4>Recent Transactions</h4>
           </div>
           <ul className="list-lines">
             {recent.length === 0 ? (

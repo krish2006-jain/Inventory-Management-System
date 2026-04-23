@@ -33,9 +33,7 @@ function SmDashboard() {
       <button className="subtle-btn" type="button" onClick={loadSummary}>
         Refresh
       </button>
-      <button className="primary-btn" type="button">
-        Live Mode
-      </button>
+      <span className="text-chip">Live metrics</span>
     </>
   );
 
@@ -108,16 +106,16 @@ function SmDashboard() {
           </div>
           <div className="quick-actions-grid">
             <a href="/sm/receive-stock" className="quick-action-btn">
-              📥 Receive Stock
+              Receive Stock
             </a>
             <a href="/sm/dispatch" className="quick-action-btn">
-              📤 Dispatch
+              Dispatch
             </a>
             <a href="/sm/adjust-stock" className="quick-action-btn">
-              🔧 Adjust Stock
+              Adjust Stock
             </a>
             <a href="/sm/activity-log" className="quick-action-btn">
-              📝 View Logs
+              View Logs
             </a>
           </div>
         </article>

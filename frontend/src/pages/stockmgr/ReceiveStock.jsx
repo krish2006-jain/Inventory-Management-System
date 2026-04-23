@@ -139,7 +139,7 @@ function ReceiveStock() {
       <section className="receive-grid">
         <article className="panel-surface receive-scan-panel">
           <div className="scan-area">
-            <div className="scan-icon">📥</div>
+            <div className="scan-icon">IN</div>
             <p>Select product and receive stock quantity</p>
             <select
               className="search-input"

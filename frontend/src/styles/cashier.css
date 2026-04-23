@@ -115,6 +115,17 @@
   padding: 8px;
 }
 
+.pos-action-chip {
+  border: 1.5px solid #c4b5fd;
+  background: #f8f6ff;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 600;
+  color: #4a3f7a;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
 .pos-action-btn {
   border: 1.5px solid #c4b5fd;
   background: #f8f6ff;
@@ -326,7 +337,16 @@
 }
 
 .pos-product-emoji {
-  font-size: 2.5rem;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: #eef0ff;
+  color: #4f5fd1;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .pos-product-price {

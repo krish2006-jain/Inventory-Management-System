@@ -5,18 +5,24 @@ import logo from "../../assets/logo.jpeg";
 import "../../styles/cashier.css";
 
 const fruits = [
-  { name: "Green Grapes", price: 85, img: "🍇" },
-  { name: "Banana", price: 45, img: "🍌" },
-  { name: "Apple", price: 120, img: "🍎" },
-  { name: "Orange", price: 65, img: "🍊" },
-  { name: "Black Grapes", price: 95, img: "🫐" },
-  { name: "Mango", price: 180, img: "🥭" },
-  { name: "Cherry", price: 140, img: "🍒" },
-  { name: "Strawberry", price: 160, img: "🍓" },
-  { name: "Plum", price: 80, img: "🫐" },
+  { name: "Green Grapes", price: 85, img: "GG" },
+  { name: "Banana", price: 45, img: "BN" },
+  { name: "Apple", price: 120, img: "AP" },
+  { name: "Orange", price: 65, img: "OR" },
+  { name: "Black Grapes", price: 95, img: "BG" },
+  { name: "Mango", price: 180, img: "MG" },
+  { name: "Cherry", price: 140, img: "CH" },
+  { name: "Strawberry", price: 160, img: "SB" },
+  { name: "Plum", price: 80, img: "PL" },
 ];
 
-const categories = ["Fruits and Vegetables", "Dairy", "Beverages", "Snacks", "Personal Care"];
+const categories = [
+  "Fruits and Vegetables",
+  "Dairy",
+  "Beverages",
+  "Snacks",
+  "Personal Care",
+];
 
 function CashierPOS() {
   const { user, logout } = useAuth();
@@ -38,9 +44,14 @@ function CashierPOS() {
     setCart((prev) => {
       const existing = prev.find((c) => c.name === item.name);
       if (existing) {
-        return prev.map((c) => c.name === item.name ? { ...c, qty: c.qty + 1 } : c);
+        return prev.map((c) =>
+          c.name === item.name ? { ...c, qty: c.qty + 1 } : c,
+        );
       }
-      return [...prev, { name: item.name, qty: 1, price: item.price, unit: "Unit" }];
+      return [
+        ...prev,
+        { name: item.name, qty: 1, price: item.price, unit: "Unit" },
+      ];
     });
   };
 
@@ -54,6 +65,11 @@ function CashierPOS() {
     navigate("/login");
   };
 
+  const handlePayment = () => {
+    setCart([]);
+    setNumInput("");
+  };
+
   return (
     <div className="pos-shell">
       {/* Header */}
@@ -61,10 +77,22 @@ function CashierPOS() {
         <div className="pos-brand">
           <img src={logo} alt="Stockly" className="pos-logo" />
           <span>Dashboard</span>
-          <span className="pos-date">Monday, 18 march 2026</span>
+          <span className="pos-date">Monday, 18 March 2026</span>
         </div>
         <div className="pos-user" onClick={handleLogout} title="Logout">
-          <div className="avatar" style={{ width: 34, height: 34, borderRadius: "50%", background: "#e8e3fb", display: "grid", placeItems: "center", color: "#6c4ef2", fontWeight: 700 }}>
+          <div
+            className="avatar"
+            style={{
+              width: 34,
+              height: 34,
+              borderRadius: "50%",
+              background: "#e8e3fb",
+              display: "grid",
+              placeItems: "center",
+              color: "#6c4ef2",
+              fontWeight: 700,
+            }}
+          >
             {user?.username?.[0]?.toUpperCase() || "C"}
           </div>
         </div>
@@ -78,9 +106,13 @@ function CashierPOS() {
               <div key={i} className="order-item">
                 <div className="order-item-info">
                   <strong>{item.name}</strong>
-                  <span>{item.qty} {item.unit}</span>
+                  <span>
+                    {item.qty} {item.unit}
+                  </span>
                 </div>
-                <span className="order-item-price">₹{(item.qty * item.price).toLocaleString()}</span>
+                <span className="order-item-price">
+                  ₹{(item.qty * item.price).toLocaleString()}
+                </span>
               </div>
             ))}
           </div>
@@ -91,9 +123,9 @@ function CashierPOS() {
           </div>
 
           <div className="order-actions">
-            <button className="pos-action-btn" type="button">Bill</button>
-            <button className="pos-action-btn" type="button">Split</button>
-            <button className="pos-action-btn" type="button">Order</button>
+            <span className="pos-action-chip">Billing</span>
+            <span className="pos-action-chip">Split check</span>
+            <span className="pos-action-chip">Order review</span>
           </div>
 
           <div className="pos-numpad-section">
@@ -101,7 +133,24 @@ function CashierPOS() {
               <label>Customer</label>
             </div>
             <div className="pos-numpad">
-              {["1","2","3","Qty","4","5","6","Del","7","8","9","Disc","+/-","0",".",""].map((key, i) => (
+              {[
+                "1",
+                "2",
+                "3",
+                "Qty",
+                "4",
+                "5",
+                "6",
+                "Del",
+                "7",
+                "8",
+                "9",
+                "Disc",
+                "+/-",
+                "0",
+                ".",
+                "",
+              ].map((key, i) => (
                 <button
                   key={i}
                   className={`numpad-btn ${key === "" ? "numpad-empty" : ""}`}
@@ -112,8 +161,12 @@ function CashierPOS() {
                 </button>
               ))}
             </div>
-            <button className="pos-payment-btn" type="button">
-              ➡ Payment
+            <button
+              className="pos-payment-btn"
+              type="button"
+              onClick={handlePayment}
+            >
+              Proceed to Payment
             </button>
           </div>
         </aside>
@@ -122,15 +175,14 @@ function CashierPOS() {
         <main className="pos-products">
           <div className="pos-floor-tabs">
             <span className="pos-floor active">Main Floor</span>
-            <button className="pos-floor-btn" type="button">+</button>
-            <button className="pos-floor-btn" type="button">−</button>
-            <span style={{ marginLeft: "auto", fontSize: "0.9rem", color: "#555" }}>
-              🏪 StoreX87
+            <span
+              style={{ marginLeft: "auto", fontSize: "0.9rem", color: "#555" }}
+            >
+              StoreX87
             </span>
           </div>
 
           <div className="pos-category-bar">
-            <button className="pos-cat-home" type="button">🏠</button>
             {categories.map((cat, i) => (
               <button
                 key={cat}
@@ -142,14 +194,22 @@ function CashierPOS() {
               </button>
             ))}
             <div className="pos-cat-right">
-              <button className="pos-cat-btn" type="button">☰</button>
-              <input className="pos-search" type="search" placeholder="🔍 Search" />
+              <input
+                className="pos-search"
+                type="search"
+                placeholder="Search"
+              />
             </div>
           </div>
 
           <div className="pos-product-grid">
             {fruits.map((f) => (
-              <button key={f.name} className="pos-product-card" type="button" onClick={() => addToCart(f)}>
+              <button
+                key={f.name}
+                className="pos-product-card"
+                type="button"
+                onClick={() => addToCart(f)}
+              >
                 <div className="pos-product-emoji">{f.img}</div>
                 <span className="pos-product-price">₹{f.price}</span>
                 <span className="pos-product-name">{f.name}</span>

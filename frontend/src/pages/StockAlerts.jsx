@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import WorkspaceLayout from "../components/WorkspaceLayout";
 import api from "../services/api";
 
@@ -29,9 +30,13 @@ function StockAlerts() {
       <button className="subtle-btn" type="button" onClick={loadAlerts}>
         Refresh
       </button>
-      <button className="primary-btn" type="button">
-        Reorder All
-      </button>
+      <Link
+        to="/purchases"
+        className="primary-btn"
+        style={{ textDecoration: "none" }}
+      >
+        Create Purchase Order
+      </Link>
     </>
   );
 
@@ -117,17 +122,13 @@ function StockAlerts() {
                     {isCritical ? "Critical" : "Warning"}
                   </span>
                   <span>
-                    <button
-                      className="primary-btn"
-                      style={{
-                        minHeight: 32,
-                        fontSize: "0.75rem",
-                        padding: "0 10px",
-                      }}
-                      type="button"
+                    <Link
+                      to="/purchases"
+                      className="text-chip"
+                      style={{ textDecoration: "none" }}
                     >
-                      Reorder
-                    </button>
+                      Open Purchases
+                    </Link>
                   </span>
                 </div>
               );
