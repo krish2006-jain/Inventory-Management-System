@@ -16,6 +16,8 @@ Stockly is a modern, multi-tenant SaaS application designed to help businesses m
 *   **Advanced Reporting**: Export professional PDF invoices and stock reports.
 *   **Modern UI/UX**: Responsive, business-professional design built with Tailwind CSS.
 
+##Live Deploy 
+`https://inventory-management-system-1-ud6w.onrender.com`
 ## 🛠️ Technology Stack
 
 **Frontend:**
