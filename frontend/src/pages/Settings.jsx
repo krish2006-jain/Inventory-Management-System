@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import WorkspaceLayout from "../components/WorkspaceLayout";
 import { useToast } from "../components/ToastProvider";
 import api from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 // Category management is embedded in Settings
 function Settings() {
@@ -14,7 +15,15 @@ function Settings() {
   const [showCatForm, setShowCatForm] = useState(false);
   const [catSaving, setCatSaving] = useState(false);
   const [confirmDeleteCat, setConfirmDeleteCat] = useState(null);
-  const [activeTab, setActiveTab] = useState("store");
+  const [activeTab, setActiveTab] = useState("security");
+  const { user } = useAuth();
+
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: ""
+  });
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -76,11 +85,40 @@ function Settings() {
     }
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      return toast.error("New passwords do not match");
+    }
+    setPasswordSaving(true);
+    try {
+      await api.patch("/auth/change-password", {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword
+      });
+      toast.success("Password changed successfully");
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to change password");
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
   const tabs = [
-    { id: "store", label: "Store Info" },
-    { id: "tax", label: "Tax & Currency" },
-    { id: "categories", label: "Categories" },
+    { id: "security", label: "Security", roles: ["owner", "stockmgr", "cashier"] },
+    { id: "store", label: "Store Info", roles: ["owner"] },
+    { id: "tax", label: "Tax & Currency", roles: ["owner"] },
+    { id: "categories", label: "Categories", roles: ["owner", "stockmgr"] },
   ];
+
+  const visibleTabs = tabs.filter(t => t.roles.includes(user.role));
+
+  useEffect(() => {
+    if (!visibleTabs.find(t => t.id === activeTab)) {
+      setActiveTab(visibleTabs[0].id);
+    }
+  }, [user.role, activeTab, visibleTabs]);
 
   if (loading) {
     return (
@@ -96,7 +134,7 @@ function Settings() {
     <WorkspaceLayout>
       {/* Tabs */}
       <div style={{ display: "flex", gap: 4, marginBottom: 20 }}>
-        {tabs.map((t) => (
+        {visibleTabs.map((t) => (
           <button
             key={t.id}
             className={activeTab === t.id ? "primary-btn" : "subtle-btn"}
@@ -107,6 +145,49 @@ function Settings() {
           </button>
         ))}
       </div>
+
+      {/* ── Security Tab ── */}
+      {activeTab === "security" && (
+        <form onSubmit={handlePasswordChange} className="panel-surface" style={{ maxWidth: 400 }}>
+          <h4 className="panel-title">Change Password</h4>
+          <div className="modal-form-grid" style={{ gridTemplateColumns: "1fr" }}>
+            <div className="form-group">
+              <label>Current Password</label>
+              <input
+                type="password"
+                required
+                value={passwordForm.currentPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>New Password</label>
+              <input
+                type="password"
+                required
+                minLength="6"
+                value={passwordForm.newPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
+              />
+            </div>
+            <div className="form-group">
+              <label>Confirm New Password</label>
+              <input
+                type="password"
+                required
+                minLength="6"
+                value={passwordForm.confirmPassword}
+                onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
+              />
+            </div>
+          </div>
+          <div style={{ marginTop: 16 }}>
+            <button type="submit" className="primary-btn" disabled={passwordSaving}>
+              {passwordSaving ? "Changing..." : "Change Password"}
+            </button>
+          </div>
+        </form>
+      )}
 
       {/* ── Store Tab ── */}
       {activeTab === "store" && settings && (

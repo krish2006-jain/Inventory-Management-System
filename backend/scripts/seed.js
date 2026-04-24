@@ -37,6 +37,41 @@ async function seed() {
   ]);
   console.log("🗑️  Cleared existing data");
 
+  // ── Users ──
+  const owner = await User.create({
+    username: "Demo Owner",
+    email: "demo@stockly.com",
+    password: "12345678",
+    role: "owner",
+    phone: "9876543210",
+    status: "Active",
+  });
+
+  const stockMgr = await User.create({
+    username: "Admin Stock",
+    email: "krishkjai90@gmail.com",
+    password: "g7FHgZeCun",
+    role: "stockmgr",
+    phone: "9876543211",
+    status: "Active",
+    tenantId: owner._id,
+  });
+
+  const cashier = await User.create({
+    username: "Billing Staff",
+    email: "krishkamlesh17@gmail.com",
+    password: "dVF5VWVUz4",
+    role: "cashier",
+    phone: "9876543212",
+    status: "Active",
+    tenantId: owner._id,
+  });
+
+  console.log("👤 Users created:");
+  console.log("   Owner:    demo@stockly.com / 12345678");
+  console.log("   StockMgr: krishkjai90@gmail.com / g7FHgZeCun");
+  console.log("   Cashier:  krishkamlesh17@gmail.com / dVF5VWVUz4");
+
   // ── Settings ──
   await Settings.create({
     storeName: "Rajesh General Store",
@@ -48,51 +83,19 @@ async function seed() {
     taxLabel: "GST",
     currency: "INR",
     currencySymbol: "₹",
+    tenantId: owner._id,
   });
-
-  // ── Users ──
-  const owner = await User.create({
-    username: "Rajesh Kumar",
-    email: "owner@stockly.com",
-    password: "owner123",
-    role: "owner",
-    phone: "9876543210",
-    status: "Active",
-  });
-
-  const stockMgr = await User.create({
-    username: "Suresh Patel",
-    email: "stockmgr@stockly.com",
-    password: "stock123",
-    role: "stockmgr",
-    phone: "9876543211",
-    status: "Active",
-  });
-
-  const cashier = await User.create({
-    username: "Priya Sharma",
-    email: "cashier@stockly.com",
-    password: "cash123",
-    role: "cashier",
-    phone: "9876543212",
-    status: "Active",
-  });
-
-  console.log("👤 Users created:");
-  console.log("   Owner:    owner@stockly.com / owner123");
-  console.log("   StockMgr: stockmgr@stockly.com / stock123");
-  console.log("   Cashier:  cashier@stockly.com / cash123");
 
   // ── Categories ──
   const categories = await Category.insertMany([
-    { name: "Dairy", description: "Milk, curd, paneer, butter", color: "#3b82f6", icon: "🥛", createdBy: owner._id },
-    { name: "FMCG", description: "Fast moving consumer goods", color: "#f59e0b", icon: "📦", createdBy: owner._id },
-    { name: "Beverages", description: "Juices, soft drinks, water", color: "#10b981", icon: "🥤", createdBy: owner._id },
-    { name: "Snacks", description: "Chips, biscuits, namkeen", color: "#ef4444", icon: "🍪", createdBy: owner._id },
-    { name: "Personal Care", description: "Soaps, shampoo, toothpaste", color: "#8b5cf6", icon: "🧴", createdBy: owner._id },
-    { name: "Grains & Pulses", description: "Rice, wheat, dal, atta", color: "#d97706", icon: "🌾", createdBy: owner._id },
-    { name: "Spices & Masala", description: "Turmeric, chilli, garam masala", color: "#dc2626", icon: "🌶️", createdBy: owner._id },
-    { name: "Cooking Oil", description: "Refined, mustard, coconut oil", color: "#059669", icon: "🫒", createdBy: owner._id },
+    { name: "Dairy", description: "Milk, curd, paneer, butter", color: "#3b82f6", icon: "🥛", createdBy: owner._id, tenantId: owner._id },
+    { name: "FMCG", description: "Fast moving consumer goods", color: "#f59e0b", icon: "📦", createdBy: owner._id, tenantId: owner._id },
+    { name: "Beverages", description: "Juices, soft drinks, water", color: "#10b981", icon: "🥤", createdBy: owner._id, tenantId: owner._id },
+    { name: "Snacks", description: "Chips, biscuits, namkeen", color: "#ef4444", icon: "🍪", createdBy: owner._id, tenantId: owner._id },
+    { name: "Personal Care", description: "Soaps, shampoo, toothpaste", color: "#8b5cf6", icon: "🧴", createdBy: owner._id, tenantId: owner._id },
+    { name: "Grains & Pulses", description: "Rice, wheat, dal, atta", color: "#d97706", icon: "🌾", createdBy: owner._id, tenantId: owner._id },
+    { name: "Spices & Masala", description: "Turmeric, chilli, garam masala", color: "#dc2626", icon: "🌶️", createdBy: owner._id, tenantId: owner._id },
+    { name: "Cooking Oil", description: "Refined, mustard, coconut oil", color: "#059669", icon: "🫒", createdBy: owner._id, tenantId: owner._id },
   ]);
   const catMap = {};
   categories.forEach((c) => (catMap[c.name] = c._id));
@@ -100,12 +103,12 @@ async function seed() {
 
   // ── Suppliers ──
   const suppliers = await Supplier.insertMany([
-    { name: "Metro Cash & Carry", email: "orders@metro.in", phone: "9001234567", category: "Wholesale", address: "Plot 45, Industrial Area, Indore", rating: 4.5, createdBy: owner._id },
-    { name: "Amul Distributors", email: "supply@amul.coop", phone: "9001234568", category: "Dairy", address: "Amul Dairy Road, Anand, Gujarat", rating: 5, createdBy: owner._id },
-    { name: "ITC Limited", email: "fmcg@itc.in", phone: "9001234569", category: "FMCG", address: "Virginia House, Kolkata", rating: 4.8, createdBy: owner._id },
-    { name: "Haldiram's Nagpur", email: "wholesale@haldirams.com", phone: "9001234570", category: "Snacks", address: "Haldiram Lane, Nagpur", rating: 4.6, createdBy: owner._id },
-    { name: "Patanjali Ayurved", email: "orders@patanjali.in", phone: "9001234571", category: "FMCG", address: "Patanjali Yogpeeth, Haridwar", rating: 4.2, createdBy: owner._id },
-    { name: "Fortune Oil Depot", email: "supply@adanigroup.com", phone: "9001234572", category: "Cooking Oil", address: "Industrial Estate, Mundra", rating: 4.4, createdBy: owner._id },
+    { name: "Metro Cash & Carry", email: "orders@metro.in", phone: "9001234567", category: "Wholesale", address: "Plot 45, Industrial Area, Indore", rating: 4.5, createdBy: owner._id, tenantId: owner._id },
+    { name: "Amul Distributors", email: "supply@amul.coop", phone: "9001234568", category: "Dairy", address: "Amul Dairy Road, Anand, Gujarat", rating: 5, createdBy: owner._id, tenantId: owner._id },
+    { name: "ITC Limited", email: "fmcg@itc.in", phone: "9001234569", category: "FMCG", address: "Virginia House, Kolkata", rating: 4.8, createdBy: owner._id, tenantId: owner._id },
+    { name: "Haldiram's Nagpur", email: "wholesale@haldirams.com", phone: "9001234570", category: "Snacks", address: "Haldiram Lane, Nagpur", rating: 4.6, createdBy: owner._id, tenantId: owner._id },
+    { name: "Patanjali Ayurved", email: "orders@patanjali.in", phone: "9001234571", category: "FMCG", address: "Patanjali Yogpeeth, Haridwar", rating: 4.2, createdBy: owner._id, tenantId: owner._id },
+    { name: "Fortune Oil Depot", email: "supply@adanigroup.com", phone: "9001234572", category: "Cooking Oil", address: "Industrial Estate, Mundra", rating: 4.4, createdBy: owner._id, tenantId: owner._id },
   ]);
   const supMap = {};
   suppliers.forEach((s) => (supMap[s.name] = s._id));
@@ -161,7 +164,7 @@ async function seed() {
   ];
 
   const products = await Product.insertMany(
-    productsData.map((p) => ({ ...p, createdBy: owner._id }))
+    productsData.map((p) => ({ ...p, createdBy: owner._id, tenantId: owner._id }))
   );
   console.log(`📦 ${products.length} Products created`);
 
@@ -187,6 +190,7 @@ async function seed() {
       note: "",
       reference: i % 3 !== 0 ? `PO-2025-${String(i + 1).padStart(4, "0")}` : "",
       performedBy: i % 2 === 0 ? stockMgr._id : owner._id,
+      tenantId: owner._id,
       createdAt: date,
     });
   }
@@ -238,6 +242,7 @@ async function seed() {
       changeDue: pm === "cash" ? Math.ceil(total / 100) * 100 - total : 0,
       cashier: cashier._id,
       cashierName: "Priya Sharma",
+      tenantId: owner._id,
       createdAt: date,
     });
   }
@@ -245,13 +250,13 @@ async function seed() {
   console.log("💰 12 Sample sales created");
 
   console.log("\n✅ Seed complete! Login credentials:");
-  console.log("┌─────────────────┬───────────────────────┬──────────┐");
-  console.log("│ Role            │ Email                 │ Password │");
-  console.log("├─────────────────┼───────────────────────┼──────────┤");
-  console.log("│ Owner           │ owner@stockly.com     │ owner123 │");
-  console.log("│ Stock Manager   │ stockmgr@stockly.com  │ stock123 │");
-  console.log("│ Cashier         │ cashier@stockly.com   │ cash123  │");
-  console.log("└─────────────────┴───────────────────────┴──────────┘");
+  console.log("┌─────────────────┬───────────────────────────┬──────────────┐");
+  console.log("│ Role            │ Email                     │ Password     │");
+  console.log("├─────────────────┼───────────────────────────┼──────────────┤");
+  console.log("│ Owner           │ demo@stockly.com          │ 12345678     │");
+  console.log("│ Stock Manager   │ krishkjai90@gmail.com     │ g7FHgZeCun   │");
+  console.log("│ Cashier         │ krishkamlesh17@gmail.com  │ dVF5VWVUz4   │");
+  console.log("└─────────────────┴───────────────────────────┴──────────────┘");
 
   await mongoose.disconnect();
   process.exit(0);
